@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Query
 from sqlalchemy.orm import Session
+from typing import Optional
 from codegate.api.dependencies import get_db
 from codegate.api.pagination import get_pagination_params, PaginationParams, paginate
 from codegate.schemas.pagination import PaginatedResponse
-from codegate.schemas.analysis import AnalysisRunCreate, AnalysisRunResponse
+from codegate.schemas.analysis import AnalysisRunCreate, AnalysisRunResponse, CodeMetricResponse
 from codegate.services.analysis_service import analysis_service
 
 router = APIRouter(tags=["Analyses"])
@@ -34,3 +35,19 @@ def get_analysis(
     db: Session = Depends(get_db)
 ):
     return analysis_service.get(db, analysis_id)
+
+@router.get("/analyses/{analysis_id}/metrics", response_model=PaginatedResponse[CodeMetricResponse])
+def list_analysis_metrics(
+    analysis_id: int,
+    analyzer: Optional[str] = Query(None, description="Filter by analyzer name"),
+    metric_name: Optional[str] = Query(None, description="Filter by metric name"),
+    file_path: Optional[str] = Query(None, description="Filter by file path"),
+    pagination: PaginationParams = Depends(get_pagination_params),
+    db: Session = Depends(get_db)
+):
+    skip = (pagination.page - 1) * pagination.page_size
+    items, total = analysis_service.list_metrics(
+        db, analysis_id=analysis_id, skip=skip, limit=pagination.page_size,
+        analyzer=analyzer, metric_name=metric_name, file_path=file_path
+    )
+    return paginate(items, total, pagination)

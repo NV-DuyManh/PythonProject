@@ -17,7 +17,7 @@ class AnalysisStore(BaseStore[AnalysisRun]):
     def get_latest_for_pull_request(self, db: Session, pull_request_id: int) -> Optional[AnalysisRun]:
         stmt = select(AnalysisRun).where(
             AnalysisRun.pull_request_id == pull_request_id
-        ).order_by(desc(AnalysisRun.created_at)).limit(1)
+        ).order_by(desc(AnalysisRun.created_at), desc(AnalysisRun.id)).limit(1)
         return db.scalar(stmt)
 
     def update_status(self, db: Session, run_id: int, status: str, **kwargs: Any) -> Optional[AnalysisRun]:

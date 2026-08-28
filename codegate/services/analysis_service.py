@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 from codegate.repositories.analysis_store import analysis_store
@@ -35,6 +35,29 @@ class AnalysisService:
         
         # Order by created_at desc (newest first)
         stmt = stmt.order_by(AnalysisRun.created_at.desc()).offset(skip).limit(limit)
+        items = list(db.scalars(stmt).all())
+        
+        return items, total
+
+    def list_metrics(self, db: Session, analysis_id: int, skip: int = 0, limit: int = 20, 
+                     analyzer: str = None, metric_name: str = None, file_path: str = None) -> Tuple[List[Any], int]:
+        from codegate.database.models.analysis import CodeMetric
+        analysis = self.get(db, analysis_id)
+        if not analysis:
+            raise NotFoundException("Analysis run not found")
+            
+        stmt = select(CodeMetric).where(CodeMetric.analysis_run_id == analysis_id)
+        if analyzer:
+            stmt = stmt.where(CodeMetric.analyzer == analyzer)
+        if metric_name:
+            stmt = stmt.where(CodeMetric.metric_name == metric_name)
+        if file_path:
+            stmt = stmt.where(CodeMetric.file_path == file_path)
+            
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = db.scalar(count_stmt)
+        
+        stmt = stmt.order_by(CodeMetric.id.asc()).offset(skip).limit(limit)
         items = list(db.scalars(stmt).all())
         
         return items, total

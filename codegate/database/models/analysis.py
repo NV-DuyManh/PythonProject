@@ -1,12 +1,17 @@
-from enum import Enum
-from typing import Optional, List, Any
 from datetime import datetime, timezone
-from sqlalchemy import String, Integer, ForeignKey, DateTime
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import JSONB
+from enum import Enum
+from typing import TYPE_CHECKING, Any, List, Optional
+
+if TYPE_CHECKING:
+    from codegate.database.models.pull_request import PullRequest
+
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
 from sqlalchemy.ext.compiler import compiles
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
+
 from codegate.database.base import Base, TimestampMixin
+
 
 # Use JSONB for postgres, fallback to JSON
 class JSONType(JSON):
@@ -21,6 +26,10 @@ class Status(str, Enum):
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
+    TIMEOUT = "TIMEOUT"
+    SUCCESS = "SUCCESS"
+    SKIPPED = "SKIPPED"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
 
 class Trigger(str, Enum):
     WEBHOOK = "WEBHOOK"
@@ -50,7 +59,9 @@ class AnalysisRun(Base, TimestampMixin):
     __tablename__ = "analysis_runs"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    pull_request_id: Mapped[int] = mapped_column(ForeignKey("pull_requests.id", ondelete="CASCADE"), nullable=False, index=True)
+    pull_request_id: Mapped[int] = mapped_column(
+        ForeignKey("pull_requests.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     
     head_sha: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     
@@ -66,6 +77,16 @@ class AnalysisRun(Base, TimestampMixin):
     error_message: Mapped[Optional[str]] = mapped_column(String, nullable=True)
 
     pull_request: Mapped["PullRequest"] = relationship("PullRequest", back_populates="analysis_runs")
+    analyzer_runs: Mapped[List["AnalyzerRun"]] = relationship(
+        "AnalyzerRun", 
+        back_populates="analysis_run", 
+        cascade="all, delete-orphan"
+    )
+    code_metrics: Mapped[List["CodeMetric"]] = relationship(
+        "CodeMetric", 
+        back_populates="analysis_run", 
+        cascade="all, delete-orphan"
+    )
     findings: Mapped[List["Finding"]] = relationship(
         "Finding", 
         back_populates="analysis_run", 
@@ -77,7 +98,9 @@ class Finding(Base):
     __tablename__ = "findings"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    analysis_run_id: Mapped[int] = mapped_column(ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True)
+    analysis_run_id: Mapped[int] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     
     source: Mapped[Source] = mapped_column(String(50), nullable=False, index=True)
     category: Mapped[str] = mapped_column(String(255), nullable=False)
@@ -88,6 +111,8 @@ class Finding(Base):
     file_path: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True)
     start_line: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     end_line: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    is_changed_file: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    is_new_code: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
     
     title: Mapped[str] = mapped_column(String(1024), nullable=False)
     description: Mapped[str] = mapped_column(String, nullable=False)
@@ -104,3 +129,42 @@ class Finding(Base):
     )
 
     analysis_run: Mapped["AnalysisRun"] = relationship("AnalysisRun", back_populates="findings")
+
+class AnalyzerRun(Base, TimestampMixin):
+    __tablename__ = "analyzer_runs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    analysis_run_id: Mapped[int] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    analyzer: Mapped[Source] = mapped_column(String(50), nullable=False, index=True)
+    status: Mapped[Status] = mapped_column(String(50), nullable=False)
+    
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    
+    error_message: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    metadata_json: Mapped[Optional[Any]] = mapped_column("metadata", JSONType, nullable=True)
+
+    analysis_run: Mapped["AnalysisRun"] = relationship("AnalysisRun", back_populates="analyzer_runs")
+
+class CodeMetric(Base, TimestampMixin):
+    __tablename__ = "code_metrics"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    analysis_run_id: Mapped[int] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    analyzer: Mapped[Source] = mapped_column(String(50), nullable=False, index=True)
+    
+    metric_name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    file_path: Mapped[Optional[str]] = mapped_column(String(1024), nullable=True, index=True)
+    symbol: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    
+    value: Mapped[str] = mapped_column(String(255), nullable=False)
+    grade: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    
+    metadata_json: Mapped[Optional[Any]] = mapped_column("metadata", JSONType, nullable=True)
+
+    analysis_run: Mapped["AnalysisRun"] = relationship("AnalysisRun", back_populates="code_metrics")

@@ -4,7 +4,6 @@ from datetime import datetime
 from codegate.database.models import Severity, Source
 
 class FindingBase(BaseModel):
-    analysis_run_id: int
     source: Source = Source.AI
     category: str
     severity: Severity = Severity.INFO
@@ -12,6 +11,8 @@ class FindingBase(BaseModel):
     file_path: Optional[str] = None
     start_line: Optional[int] = None
     end_line: Optional[int] = None
+    is_changed_file: Optional[bool] = None
+    is_new_code: Optional[bool] = None
     title: str
     description: str
     recommendation: Optional[str] = None
@@ -20,6 +21,10 @@ class FindingBase(BaseModel):
 
 class FindingResponse(FindingBase):
     id: int
+    analysis_run_id: int
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class FindingCreate(FindingBase):
+    pass
