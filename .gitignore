@@ -17,3 +17,8 @@ docs/.cache/
 .qodo
 poetry.lock
 .log
+
+# CodeGate database
+codegate.db
+*.db
+
