@@ -1,0 +1,70 @@
+from typing import Optional, List, Tuple
+from sqlalchemy.orm import Session
+from codegate.database.models import Repository, Provider
+from codegate.repositories.repo_store import repo_store
+from codegate.schemas.repository import RepositoryCreate, RepositoryUpdate
+from codegate.api.exceptions import NotFoundException, ConflictException
+from sqlalchemy.exc import IntegrityError
+
+class RepositoryService:
+    def create(self, db: Session, repo_in: RepositoryCreate) -> Repository:
+        # Check duplicate
+        existing = repo_store.get_by_full_name(db, repo_in.provider, repo_in.full_name)
+        if existing:
+            raise ConflictException(f"Repository {repo_in.provider}:{repo_in.full_name} already exists")
+        
+        try:
+            return repo_store.create(db, obj_in=repo_in.model_dump())
+        except IntegrityError:
+            db.rollback()
+            raise ConflictException("Database integrity error on repository creation")
+
+    def get(self, db: Session, repo_id: int) -> Repository:
+        repo = repo_store.get_by_id(db, repo_id)
+        if not repo:
+            raise NotFoundException("Repository not found")
+        return repo
+
+    def list(self, db: Session, provider: Optional[Provider] = None, active: Optional[bool] = None, search: Optional[str] = None, skip: int = 0, limit: int = 20) -> Tuple[List[Repository], int]:
+        filters = {}
+        if provider:
+            filters["provider"] = provider
+        if active is not None:
+            filters["active"] = active
+            
+        # In a real app we'd add search filter to repo_store
+        # For simplicity, passing directly if supported by our store, else relying on base store
+        # Here we just use the list from base_store and maybe implement simple filtering
+        
+        # Let's use SQLAlchemy directly for more complex queries
+        from sqlalchemy import select, func
+        stmt = select(Repository)
+        if provider:
+            stmt = stmt.where(Repository.provider == provider)
+        if active is not None:
+            stmt = stmt.where(Repository.active == active)
+        if search:
+            stmt = stmt.where(Repository.full_name.ilike(f"%{search}%"))
+            
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = db.scalar(count_stmt)
+        
+        stmt = stmt.offset(skip).limit(limit)
+        items = list(db.scalars(stmt).all())
+        
+        return items, total
+
+    def update(self, db: Session, repo_id: int, repo_in: RepositoryUpdate) -> Repository:
+        repo = self.get(db, repo_id)
+        try:
+            return repo_store.update(db, db_obj=repo, obj_in=repo_in.model_dump(exclude_unset=True))
+        except IntegrityError:
+            db.rollback()
+            raise ConflictException("Database integrity error on repository update")
+
+    def delete(self, db: Session, repo_id: int) -> Repository:
+        repo = self.get(db, repo_id)
+        # Soft delete
+        return repo_store.update(db, db_obj=repo, obj_in={"active": False})
+
+repository_service = RepositoryService()

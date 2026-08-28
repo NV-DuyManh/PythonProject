@@ -1,56 +1,65 @@
+from typing import Optional, List, Tuple
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy import select, func
 from codegate.repositories.repo_store import repo_store
 from codegate.repositories.pr_store import pr_store
-from codegate.database.models import Provider, State
+from codegate.database.models import Provider, State, PullRequest
+from codegate.schemas.pull_request import PullRequestCreate, PullRequestUpdate
+from codegate.api.exceptions import NotFoundException, ConflictException
 
 class PullRequestService:
-    def create_or_update_pr(
-        self,
-        db: Session,
-        provider: Provider,
-        repo_owner: str,
-        repo_name: str,
-        repo_url: str,
-        pr_number: int,
-        pr_title: str,
-        author: str,
-        source_branch: str,
-        target_branch: str,
-        state: State,
-        head_sha: str
-    ):
-        full_name = f"{repo_owner}/{repo_name}"
-        repo = repo_store.get_by_full_name(db, provider, full_name)
+    def create(self, db: Session, repository_id: int, pr_in: PullRequestCreate) -> PullRequest:
+        # Check repo exists
+        repo = repo_store.get_by_id(db, repository_id)
         if not repo:
-            repo = repo_store.create(db, obj_in={
-                "provider": provider,
-                "owner": repo_owner,
-                "name": repo_name,
-                "full_name": full_name,
-                "url": repo_url
-            })
-        
-        pr = pr_store.get_by_repo_and_number(db, repo.id, pr_number)
-        if pr:
-            # Update existing
-            pr = pr_store.update(db, db_obj=pr, obj_in={
-                "title": pr_title,
-                "state": state,
-                "head_sha": head_sha
-            })
-        else:
-            # Create new
-            pr = pr_store.create(db, obj_in={
-                "repository_id": repo.id,
-                "number": pr_number,
-                "title": pr_title,
-                "author_username": author,
-                "source_branch": source_branch,
-                "target_branch": target_branch,
-                "state": state,
-                "head_sha": head_sha
-            })
+            raise NotFoundException("Repository not found")
             
+        # Check duplicate PR in repo
+        existing = pr_store.get_by_repo_and_number(db, repository_id, pr_in.number)
+        if existing:
+            raise ConflictException(f"Pull request #{pr_in.number} already exists in this repository")
+            
+        try:
+            dump = pr_in.model_dump()
+            dump["repository_id"] = repository_id
+            return pr_store.create(db, obj_in=dump)
+        except IntegrityError:
+            db.rollback()
+            raise ConflictException("Database integrity error on pull request creation")
+
+    def get(self, db: Session, pr_id: int) -> PullRequest:
+        pr = pr_store.get_by_id(db, pr_id)
+        if not pr:
+            raise NotFoundException("Pull request not found")
+        # Add analysis count dynamically if needed, or rely on schema from_attributes mapping
         return pr
+
+    def list(self, db: Session, repository_id: Optional[int] = None, state: Optional[State] = None, author: Optional[str] = None, search: Optional[str] = None, skip: int = 0, limit: int = 20) -> Tuple[List[PullRequest], int]:
+        stmt = select(PullRequest)
+        if repository_id:
+            stmt = stmt.where(PullRequest.repository_id == repository_id)
+        if state:
+            stmt = stmt.where(PullRequest.state == state)
+        if author:
+            stmt = stmt.where(PullRequest.author_username == author)
+        if search:
+            stmt = stmt.where(PullRequest.title.ilike(f"%{search}%"))
+            
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = db.scalar(count_stmt)
+        
+        stmt = stmt.offset(skip).limit(limit)
+        items = list(db.scalars(stmt).all())
+        
+        return items, total
+
+    def update(self, db: Session, pr_id: int, pr_in: PullRequestUpdate) -> PullRequest:
+        pr = self.get(db, pr_id)
+        try:
+            return pr_store.update(db, db_obj=pr, obj_in=pr_in.model_dump(exclude_unset=True))
+        except IntegrityError:
+            db.rollback()
+            raise ConflictException("Database integrity error on pull request update")
 
 pr_service = PullRequestService()

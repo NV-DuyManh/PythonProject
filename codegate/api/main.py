@@ -1,0 +1,33 @@
+import os
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from codegate.api.exceptions import register_exception_handlers
+
+from codegate.api.routers import health, repositories, pull_requests, analyses, findings
+
+app = FastAPI(
+    title="CodeGate API",
+    description="Pull Request Review & Quality Management Platform",
+    version="0.1.0",
+)
+
+# CORS configuration
+# Allow localhost for development. Production should use environment variables.
+allow_origins = os.environ.get("CORS_ALLOW_ORIGINS", "http://localhost,http://localhost:3000,http://127.0.0.1,http://127.0.0.1:3000")
+origins = [origin.strip() for origin in allow_origins.split(",") if origin.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+register_exception_handlers(app)
+
+app.include_router(health.router, prefix="/api/v1")
+app.include_router(repositories.router, prefix="/api/v1")
+app.include_router(pull_requests.router, prefix="/api/v1")
+app.include_router(analyses.router, prefix="/api/v1")
+app.include_router(findings.router, prefix="/api/v1")
