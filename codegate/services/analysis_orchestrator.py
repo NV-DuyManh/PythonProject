@@ -7,6 +7,7 @@ from codegate.database.models.pull_request import PullRequest
 from codegate.database.models.analysis import AnalysisRun, Status, Trigger, Finding
 from codegate.integrations.pr_agent.adapter import CodeGateAdapter
 from codegate.integrations.pr_agent.normalizer import PRAgentNormalizer
+from codegate.services.quality_service import quality_service
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,12 @@ class AnalysisOrchestrator:
             # Save Usage / Metadata if available
             usage = PRAgentNormalizer.extract_usage(raw_data)
             run.tokens_used = usage.get("total_tokens", 0)
+            
+            # Commit findings first so quality engine can read them
+            self.db.commit()
+            
+            # Calculate Quality Score (errors caught inside, shouldn't fail the run)
+            quality_service.calculate_and_persist(self.db, run.id)
 
             # Complete Run
             run.status = Status.COMPLETED

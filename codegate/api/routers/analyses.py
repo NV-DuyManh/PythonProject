@@ -5,7 +5,9 @@ from codegate.api.dependencies import get_db
 from codegate.api.pagination import get_pagination_params, PaginationParams, paginate
 from codegate.schemas.pagination import PaginatedResponse
 from codegate.schemas.analysis import AnalysisRunCreate, AnalysisRunResponse, CodeMetricResponse
+from codegate.schemas.quality import QualityScoreResponse
 from codegate.services.analysis_service import analysis_service
+from codegate.services.quality_service import quality_service
 
 router = APIRouter(tags=["Analyses"])
 
@@ -51,3 +53,19 @@ def list_analysis_metrics(
         analyzer=analyzer, metric_name=metric_name, file_path=file_path
     )
     return paginate(items, total, pagination)
+
+@router.get("/analyses/{analysis_id}/quality", response_model=QualityScoreResponse)
+def get_analysis_quality(
+    analysis_id: int,
+    db: Session = Depends(get_db)
+):
+    """Retrieve the latest quality score for an analysis run"""
+    return quality_service.get_quality(db, analysis_id)
+
+@router.post("/analyses/{analysis_id}/quality/recalculate", response_model=QualityScoreResponse)
+def recalculate_analysis_quality(
+    analysis_id: int,
+    db: Session = Depends(get_db)
+):
+    """Recalculate the quality score for an analysis run"""
+    return quality_service.recalculate(db, analysis_id)

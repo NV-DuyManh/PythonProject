@@ -3,7 +3,7 @@ from codegate.database.models.user import User
 from codegate.database.models.team import Team, TeamMember, Role
 from codegate.database.models.repository import Repository, Provider
 from codegate.database.models.pull_request import PullRequest, PullRequestFile, State
-from codegate.database.models.analysis import AnalysisRun, Finding, Status, Trigger, Severity, Source
+from codegate.database.models.analysis import AnalysisRun, Finding, Status, Trigger, Severity, Source, QualityScore
 from codegate.database.models.webhook import WebhookEvent
 
 __all__ = [
@@ -23,5 +23,6 @@ __all__ = [
     "Trigger",
     "Severity",
     "Source",
-    "WebhookEvent"
+    "WebhookEvent",
+    "QualityScore"
 ]

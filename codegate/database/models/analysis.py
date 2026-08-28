@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, List, Optional
 if TYPE_CHECKING:
     from codegate.database.models.pull_request import PullRequest
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.types import JSON
@@ -92,6 +92,11 @@ class AnalysisRun(Base, TimestampMixin):
         back_populates="analysis_run", 
         cascade="all, delete-orphan"
     )
+    quality_scores: Mapped[List["QualityScore"]] = relationship(
+        "QualityScore",
+        back_populates="analysis_run",
+        cascade="all, delete-orphan"
+    )
 
 
 class Finding(Base):
@@ -168,3 +173,35 @@ class CodeMetric(Base, TimestampMixin):
     metadata_json: Mapped[Optional[Any]] = mapped_column("metadata", JSONType, nullable=True)
 
     analysis_run: Mapped["AnalysisRun"] = relationship("AnalysisRun", back_populates="code_metrics")
+
+
+class QualityScore(Base, TimestampMixin):
+    __tablename__ = "quality_scores"
+    __table_args__ = (
+        UniqueConstraint('analysis_run_id', 'calculation_version', name='uq_quality_score_version'),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    analysis_run_id: Mapped[int] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    
+    overall_score: Mapped[float] = mapped_column(nullable=False)
+    grade: Mapped[str] = mapped_column(String(5), nullable=False)
+    
+    code_quality_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    security_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    testing_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    complexity_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    maintainability_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    ai_review_score: Mapped[Optional[float]] = mapped_column(nullable=True)
+    
+    available_weight: Mapped[float] = mapped_column(nullable=False)
+    is_complete: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    
+    missing_dimensions: Mapped[Optional[Any]] = mapped_column(JSONType, nullable=True)
+    breakdown_json: Mapped[Any] = mapped_column(JSONType, nullable=False)
+    
+    calculation_version: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    analysis_run: Mapped["AnalysisRun"] = relationship("AnalysisRun", back_populates="quality_scores")
