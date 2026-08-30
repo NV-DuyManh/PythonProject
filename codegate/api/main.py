@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from codegate.api.exceptions import register_exception_handlers
 
-from codegate.api.routers import health, repositories, pull_requests, analyses, findings, webhooks, testing, reviewer
+from codegate.api.routers import health, repositories, pull_requests, analyses, findings, webhooks, testing, reviewer, dashboard, analytics
 
 app = FastAPI(
     title="CodeGate API",
@@ -13,7 +13,7 @@ app = FastAPI(
 
 # CORS configuration
 # Allow localhost for development. Production should use environment variables.
-allow_origins = os.environ.get("CORS_ALLOW_ORIGINS", "http://localhost,http://localhost:3000,http://127.0.0.1,http://127.0.0.1:3000")
+allow_origins = os.environ.get("CORS_ALLOW_ORIGINS", "http://localhost,http://localhost:3000,http://localhost:5173,http://127.0.0.1,http://127.0.0.1:3000,http://127.0.0.1:5173")
 origins = [origin.strip() for origin in allow_origins.split(",") if origin.strip()]
 
 app.add_middleware(
@@ -33,4 +33,6 @@ app.include_router(analyses.router, prefix="/api/v1")
 app.include_router(findings.router, prefix="/api/v1")
 app.include_router(testing.router, prefix="/api/v1")
 app.include_router(reviewer.router, prefix="/api/v1")
+app.include_router(dashboard.router, prefix="/api/v1")
+app.include_router(analytics.router, prefix="/api/v1")
 app.include_router(webhooks.router)
