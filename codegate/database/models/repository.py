@@ -4,7 +4,7 @@ from typing import Optional, List, TYPE_CHECKING
 if TYPE_CHECKING:
     from codegate.database.models.pull_request import PullRequest
     from codegate.database.models.policy import QualityPolicy
-from sqlalchemy import String, Boolean, UniqueConstraint
+from sqlalchemy import String, Boolean, UniqueConstraint, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from codegate.database.base import Base, TimestampMixin
 
@@ -28,6 +28,9 @@ class Repository(Base, TimestampMixin):
     url: Mapped[str] = mapped_column(String(1024), nullable=False)
     default_branch: Mapped[str] = mapped_column(String(255), nullable=False, default="main")
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    data_source: Mapped[str] = mapped_column(String(20), server_default="LIVE")
+    github_connection_id: Mapped[Optional[int]] = mapped_column(ForeignKey("github_connections.id"), nullable=True)
+    github_connection = relationship("GitHubConnection", back_populates="repositories")
 
     pull_requests: Mapped[List["PullRequest"]] = relationship(
         "PullRequest", 

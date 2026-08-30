@@ -51,6 +51,11 @@ class DashboardService:
         for repo in repos:
             # We fetch individually for now to pass the tests. We can optimize later if time permits.
             kpis = analytics_store.get_overview_kpis(db, repository_id=repo.id, from_date=from_date, to_date=to_date)
+            last_analysis_stmt = select(func.max(AnalysisRun.created_at)).join(
+                PullRequest, PullRequest.id == AnalysisRun.pull_request_id
+            ).where(PullRequest.repository_id == repo.id)
+            last_analysis_at = db.scalar(last_analysis_stmt)
+            
             items.append(
                 RepositoryDashboardItem(
                     repository_id=repo.id,
@@ -68,7 +73,7 @@ class DashboardService:
                     test_pass_rate=kpis["test_pass_rate"],
                     average_changed_coverage=kpis["average_changed_line_coverage"],
                     critical_findings=kpis["critical_findings"],
-                    last_analysis_at=None # TODO fetch last analysis
+                    last_analysis_at=last_analysis_at
                 )
             )
             

@@ -13,8 +13,8 @@ class GithubSyncService:
     """
     def __init__(self, db: Session):
         self.db = db
-        self.repo_service = RepositoryService(db)
-        self.pr_service = PullRequestService(db)
+        self.repo_service = RepositoryService()
+        self.pr_service = PullRequestService()
 
     def sync_pull_request(self, pr_url: str) -> Tuple[Repository, PullRequest]:
         """
@@ -35,21 +35,34 @@ class GithubSyncService:
             repo_obj = pr_obj.base.repo
 
         # Extract Repository Data
-        repo_full_name = getattr(repo_obj, "full_name", "") or provider.get_repo_settings().get("name", "")
+        # If repo_obj doesn't have full_name, extract from URL
+        repo_full_name = getattr(repo_obj, "full_name", "")
+        if not repo_full_name:
+            # pr_url e.g. https://github.com/owner/repo/pull/1
+            parts = pr_url.rstrip("/").split("/")
+            if len(parts) >= 6:
+                repo_full_name = f"{parts[-4]}/{parts[-3]}"
         if not repo_full_name:
             repo_full_name = pr_url.split("github.com/")[-1].split("/pull")[0]
 
         repo_url = f"https://github.com/{repo_full_name}"
         
         # 1. Upsert Repository
-        repository = self.repo_service.get_by_url(repo_url)
+        from codegate.repositories.repo_store import repo_store
+        # We need to find it by full_name
+        repository = repo_store.get_by_full_name(self.db, "GITHUB", repo_full_name)
         if not repository:
             # We bypass the pydantic schema for internal sync since we have direct models
+            owner_name = repo_full_name.split("/")[0] if "/" in repo_full_name else ""
+            repo_name = repo_full_name.split("/")[-1]
             repository = Repository(
-                name=repo_full_name.split("/")[-1],
-                provider="github",
+                name=repo_name,
+                owner=owner_name,
+                full_name=repo_full_name,
+                provider="GITHUB",
                 url=repo_url,
-                is_active=True
+                active=True,
+                data_source="LIVE"
             )
             self.db.add(repository)
             self.db.commit()
@@ -74,7 +87,7 @@ class GithubSyncService:
             state = "MERGED"
 
         changed_files_list = provider.get_diff_files() or []
-        changed_files = {"files": changed_files_list}
+        changed_files_count = len(changed_files_list)
 
         # 2. Upsert PullRequest
         # Check if PR exists
@@ -89,7 +102,7 @@ class GithubSyncService:
             pull_request.description = description
             pull_request.state = state
             pull_request.head_sha = head_sha
-            pull_request.changed_files = changed_files
+            pull_request.changed_files = changed_files_count
             self.db.commit()
             self.db.refresh(pull_request)
         else:
@@ -102,9 +115,11 @@ class GithubSyncService:
                 author_username=author,
                 source_branch=source_branch,
                 target_branch=target_branch,
-                head_sha=head_sha,
                 state=state,
-                changed_files=changed_files
+                changed_files=changed_files_count,
+                head_sha=head_sha,
+                provider_created_at=getattr(pr_obj, "created_at", None),
+                provider_updated_at=getattr(pr_obj, "updated_at", None),
             )
             self.db.add(pull_request)
             self.db.commit()

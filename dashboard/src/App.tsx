@@ -7,6 +7,8 @@ import { RepositoryDetail } from './pages/RepositoryDetail';
 import { PullRequests } from './pages/PullRequests';
 import { PullRequestDetail } from './pages/PullRequestDetail';
 import { Analytics } from './pages/Analytics';
+import { Integrations } from './pages/Integrations';
+import { GitHubIntegration } from './pages/GitHubIntegration';
 
 function App() {
   return (
@@ -20,6 +22,8 @@ function App() {
           <Route path="/pull-requests" element={<PullRequests />} />
           <Route path="/pull-requests/:pullRequestId" element={<PullRequestDetail />} />
           <Route path="/analytics" element={<Analytics />} />
+          <Route path="/integrations" element={<Integrations />} />
+          <Route path="/integrations/github" element={<GitHubIntegration />} />
         </Route>
       </Routes>
     </BrowserRouter>

@@ -43,6 +43,11 @@ async def process_webhook_task(delivery_id: str, event_type: str, action: str, b
                     pr_url = body.get("pull_request", {}).get("html_url")
                     if not pr_url:
                         raise ValueError("No PR URL found in payload")
+                    # Extract installation_id for PR-Agent authentication
+                    installation_id = body.get("installation", {}).get("id")
+                    if installation_id:
+                        from pr_agent.config_loader import get_settings
+                        get_settings().set("GITHUB.INSTALLATION_ID", installation_id)
                     
                     # 1. Sync Data
                     sync_service = GithubSyncService(db)

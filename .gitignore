@@ -15,6 +15,22 @@ build/
 .DS_Store
 docs/.cache/
 .qodo
+skpro/
+
+.idea/
+.lsp/
+.vscode/
+.venv/
+venv/
+pr_agent/settings/.secrets.toml
+pr_agent/settings_prod/.secrets.toml
+__pycache__
+dist/
+*.egg-info/
+build/
+.DS_Store
+docs/.cache/
+.qodo
 poetry.lock
 .log
 
@@ -22,3 +38,6 @@ poetry.lock
 codegate.db
 *.db
 
+# Launcher runtime
+.runtime/
+.env

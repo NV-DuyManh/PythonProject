@@ -13,7 +13,34 @@
 </picture>
 <br>
 The Original Open-Source PR Reviewer
-<br><br>
+<br><div align="center">
+
+<img src="https://github.com/the-pr-agent/pr-agent/assets/3277319/84883344-9844-42ea-9e73-b7dc446540c4" width="200" height="200">
+<img src="docs/docs/images/qodo_badge.svg" width="200" height="200">
+
+
+</div>
+
+## Quick Start — Windows
+
+**Recommended GUI Launcher:**
+1. Double-click `CodeGateLauncher.exe` in the repository root.
+2. Click **START CODEGATE**.
+3. The dashboard opens automatically when ready.
+4. To stop, click **STOP CODEGATE**.
+
+**Legacy Batch Scripts (Alternative):**
+- **START**: Double-click `START_CODEGATE.bat` (or `CODEGATE_START.cmd` for diagnostics).
+- **STOP**: Double-click `STOP_CODEGATE.bat`.
+- **RESTART**: Double-click `RESTART_CODEGATE.bat`.
+
+*Optional*: Run `powershell .\scripts\create_desktop_shortcut.ps1` to place a shortcut on your Desktop.
+
+## Advanced Manual Commands
+PR-Agent offers extensive pull request feedback and features.
+
+
+<br>
 <a href="https://github.com/the-pr-agent/pr-agent/commits/main">
 <img alt="GitHub" src="https://img.shields.io/github/last-commit/the-pr-agent/pr-agent/main?style=for-the-badge" height="20">
 </a>

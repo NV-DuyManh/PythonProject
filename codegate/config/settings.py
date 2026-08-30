@@ -1,5 +1,5 @@
 import os
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class CodeGateSettings(BaseSettings):
     # Default to sqlite for local dev and testing
@@ -12,8 +12,6 @@ class CodeGateSettings(BaseSettings):
     BANDIT_ENABLED: bool = True
     RADON_ENABLED: bool = True
 
-    class Config:
-        env_file = ".env"
-        env_file_encoding = 'utf-8'
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 settings = CodeGateSettings()

@@ -49,6 +49,10 @@ class DashboardOverviewResponse(BaseModel):
     risk_trend: List[DashboardOverviewTrendPoint]
     changed_coverage_trend: List[DashboardOverviewTrendPoint]
     policy_trend: List[DashboardOverviewTrendPoint]
+    
+    quality_grade_distribution: dict = Field(default_factory=dict)
+    risk_level_distribution: dict = Field(default_factory=dict)
+    policy_decision_distribution: dict = Field(default_factory=dict)
 
 
 class RepositoryDashboardItem(BaseModel):

@@ -26,6 +26,9 @@ export interface DashboardOverviewResponse {
   risk_trend: any[];
   changed_coverage_trend: any[];
   policy_trend: any[];
+  quality_grade_distribution: Record<string, number>;
+  risk_level_distribution: Record<string, number>;
+  policy_decision_distribution: Record<string, number>;
 }
 
 export interface RepositoryDashboardItem {

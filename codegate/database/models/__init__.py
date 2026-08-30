@@ -8,6 +8,7 @@ from codegate.database.models.webhook import WebhookEvent
 from codegate.database.models.policy import QualityPolicy, PolicyEvaluation, PolicyDecision, EvaluationStatus, PublishStatus
 from codegate.database.models.testing import TestConfiguration, TestRun, CoverageReport
 from codegate.database.models.reviewer import ReviewerRecommendationConfig, ReviewerRecommendation, ReviewerRecommendationCandidate
+from codegate.database.models.github import GitHubConnection
 
 __all__ = [
     "Base",
@@ -40,5 +41,6 @@ __all__ = [
     "CoverageReport",
     "ReviewerRecommendationConfig",
     "ReviewerRecommendation",
-    "ReviewerRecommendationCandidate"
+    "ReviewerRecommendationCandidate",
+    "GitHubConnection"
 ]

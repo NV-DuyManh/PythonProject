@@ -9,18 +9,30 @@ import {
   ShieldX,
   CheckCircle,
   RefreshCw,
+  Database
 } from 'lucide-react';
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  LineChart, Line, CartesianGrid, Cell, Legend
+} from 'recharts';
 
 export function Overview() {
   const [data, setData] = useState<DashboardOverviewResponse | null>(null);
+  const [sysStatus, setSysStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
     setError(null);
-    CodeGateAPI.getOverview()
-      .then(setData)
+    Promise.all([
+      CodeGateAPI.getOverview(),
+      CodeGateAPI.getSystemStatus()
+    ])
+      .then(([overview, status]) => {
+        setData(overview);
+        setSysStatus(status);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   };
@@ -66,7 +78,20 @@ export function Overview() {
       {/* HERO */}
       <div className="page-hero">
         <div className="page-hero__content">
-          <p className="page-hero__kicker">CODEGATE ANALYTICS</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <p className="page-hero__kicker">CODEGATE ANALYTICS</p>
+            {sysStatus && (
+              <span style={{ 
+                fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px',
+                backgroundColor: sysStatus.data_mode === 'DEMO' ? 'var(--cg-amber-10)' : 'var(--cg-green-10)',
+                color: sysStatus.data_mode === 'DEMO' ? 'var(--cg-amber)' : 'var(--cg-green)',
+                border: `1px solid ${sysStatus.data_mode === 'DEMO' ? 'var(--cg-amber-30)' : 'var(--cg-green-30)'}`
+              }}>
+                <Database size={10} style={{ display: 'inline', marginRight: '4px' }}/>
+                {sysStatus.data_mode} MODE
+              </span>
+            )}
+          </div>
           <h2 className="page-hero__title">Engineering Health Overview</h2>
           <p className="page-hero__desc">
             Monitor pull request quality, risk, testing, security and merge readiness across connected repositories.
@@ -203,16 +228,48 @@ export function Overview() {
           <div className="dashboard-panel__head">
             <div className="dashboard-panel__title">Quality Grade Distribution</div>
           </div>
-          <div className="dashboard-panel__body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cg-muted)', fontSize: '13px' }}>
-            {d.analyses_total === 0 ? 'No analysis data yet' : 'Quality grades chart'}
+          <div className="dashboard-panel__body" style={{ height: '220px', width: '100%' }}>
+            {d.analyses_total === 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--cg-muted)' }}>No analysis data yet</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={Object.entries(d.quality_grade_distribution || {}).map(([k, v]) => ({ name: k, count: v }))} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--cg-border)" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--cg-text-secondary)' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--cg-text-secondary)' }} />
+                  <Tooltip cursor={{ fill: 'var(--cg-bg-hover)' }} contentStyle={{ backgroundColor: 'var(--cg-bg-elevated)', borderColor: 'var(--cg-border)', borderRadius: '6px' }} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {Object.entries(d.quality_grade_distribution || {}).map(([k]) => (
+                      <Cell key={k} fill={k === 'A' ? 'var(--cg-green)' : k === 'B' ? 'var(--cg-green-muted)' : k === 'C' ? 'var(--cg-amber)' : 'var(--cg-red)'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
         <div className="dashboard-panel">
           <div className="dashboard-panel__head">
             <div className="dashboard-panel__title">Risk Level Distribution</div>
           </div>
-          <div className="dashboard-panel__body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cg-muted)', fontSize: '13px' }}>
-            {d.analyses_total === 0 ? 'No analysis data yet' : 'Risk levels chart'}
+          <div className="dashboard-panel__body" style={{ height: '220px', width: '100%' }}>
+            {d.analyses_total === 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--cg-muted)' }}>No analysis data yet</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={Object.entries(d.risk_level_distribution || {}).map(([k, v]) => ({ name: k, count: v }))} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--cg-border)" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--cg-text-secondary)' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--cg-text-secondary)' }} />
+                  <Tooltip cursor={{ fill: 'var(--cg-bg-hover)' }} contentStyle={{ backgroundColor: 'var(--cg-bg-elevated)', borderColor: 'var(--cg-border)', borderRadius: '6px' }} />
+                  <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                    {Object.entries(d.risk_level_distribution || {}).map(([k]) => (
+                      <Cell key={k} fill={k === 'LOW' ? 'var(--cg-green)' : k === 'MEDIUM' ? 'var(--cg-amber)' : 'var(--cg-red)'} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
         <div className="dashboard-panel">
@@ -245,8 +302,22 @@ export function Overview() {
             <div className="dashboard-panel__title">Quality & Risk Trend</div>
             <div className="dashboard-panel__meta">Recent PRs</div>
           </div>
-          <div className="dashboard-panel__body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--cg-muted)', fontSize: '13px', minHeight: '180px' }}>
-            {d.quality_trend.length === 0 ? 'No trend data available' : 'Quality/Risk trend chart'}
+          <div className="dashboard-panel__body" style={{ height: '220px', width: '100%' }}>
+            {(!d.quality_trend || d.quality_trend.length === 0) ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--cg-muted)' }}>No trend data available</div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={d.quality_trend.map((q, i) => ({ pr: q.date, quality: q.value, risk: d.risk_trend[i]?.value }))} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--cg-border)" />
+                  <XAxis dataKey="pr" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--cg-text-secondary)' }} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'var(--cg-text-secondary)' }} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--cg-bg-elevated)', borderColor: 'var(--cg-border)', borderRadius: '6px' }} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                  <Line type="monotone" dataKey="quality" stroke="var(--cg-green)" strokeWidth={2} dot={false} activeDot={{ r: 6 }} name="Quality Score" />
+                  <Line type="monotone" dataKey="risk" stroke="var(--cg-amber)" strokeWidth={2} dot={false} activeDot={{ r: 6 }} name="Risk Score" />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
         <div className="dashboard-panel">

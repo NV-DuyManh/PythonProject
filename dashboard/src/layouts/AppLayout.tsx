@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import {
   LayoutDashboard,
   GitBranch,
@@ -7,10 +8,20 @@ import {
   Shield,
   Zap,
   Server,
+  Settings,
+  Database
 } from 'lucide-react';
 
 export function AppLayout() {
   const location = useLocation();
+  const [sysStatus, setSysStatus] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/v1/system/status')
+      .then(r => r.json())
+      .then(setSysStatus)
+      .catch(console.error);
+  }, []);
 
   const navSections = [
     {
@@ -30,6 +41,12 @@ export function AppLayout() {
       label: 'INTELLIGENCE',
       items: [
         { name: 'Analytics', href: '/analytics', icon: ChartNoAxesCombined },
+      ],
+    },
+    {
+      label: 'SETTINGS',
+      items: [
+        { name: 'Integrations', href: '/integrations', icon: Settings },
       ],
     },
   ];
@@ -53,15 +70,23 @@ export function AppLayout() {
 
         <div className="sidebar__status">
           <div className="sidebar__status-title">System Status</div>
+          
           <div className="sidebar__status-row">
-            <span className="sidebar__status-dot" />
+            <span className="sidebar__status-dot" style={{ background: sysStatus?.system?.status === 'HEALTHY' ? 'var(--cg-success)' : 'var(--cg-warning)' }} />
             <Server size={13} strokeWidth={1.8} />
-            <span>API Connected</span>
+            <span>API {sysStatus?.system?.status === 'HEALTHY' ? 'Connected' : 'Offline'}</span>
           </div>
+
           <div className="sidebar__status-row">
-            <span className="sidebar__status-dot" />
+            <span className="sidebar__status-dot" style={{ background: sysStatus?.database?.status === 'CONNECTED' ? 'var(--cg-success)' : 'var(--cg-warning)' }} />
+            <Database size={13} strokeWidth={1.8} />
+            <span>DB {sysStatus?.database?.status === 'CONNECTED' ? 'Connected' : 'Offline'}</span>
+          </div>
+
+          <div className="sidebar__status-row">
+            <span className="sidebar__status-dot" style={{ background: sysStatus?.github?.status === 'CONNECTED' ? 'var(--cg-success)' : 'var(--cg-danger)' }} />
             <Zap size={13} strokeWidth={1.8} />
-            <span>GitHub Integration</span>
+            <span>GitHub {sysStatus?.github?.status === 'CONNECTED' ? 'Connected' : 'Disconnected'}</span>
           </div>
         </div>
 

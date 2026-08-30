@@ -17,7 +17,7 @@ from codegate.database.models import (
     Finding, Status, Trigger, PolicyDecision,
     QualityPolicy, TestConfiguration, ReviewerRecommendationConfig,
     ReviewerRecommendation, ReviewerRecommendationCandidate,
-    Team, TeamMember, User
+    Team, TeamMember, User, GitHubConnection
 )
 from codegate.config import settings
 
@@ -65,10 +65,15 @@ def seed_database():
         session.add_all(users)
         session.commit()
 
+        # Create GitHubConnection
+        demo_conn = GitHubConnection(provider="github", account_login="codegate", auth_type="app", status="active")
+        session.add(demo_conn)
+        session.commit()
+
         # Repositories
-        repo1 = Repository(provider="GITHUB", owner="codegate", name="codegate-core", full_name="codegate/codegate-core", url="https://github.com/codegate/codegate-core", default_branch="main", created_at=now - timedelta(days=60), updated_at=now)
-        repo2 = Repository(provider="GITHUB", owner="codegate", name="identity-service", full_name="codegate/identity-service", url="https://github.com/codegate/identity-service", default_branch="main", created_at=now - timedelta(days=90), updated_at=now)
-        repo3 = Repository(provider="GITHUB", owner="codegate", name="payment-platform", full_name="codegate/payment-platform", url="https://github.com/codegate/payment-platform", default_branch="main", created_at=now - timedelta(days=120), updated_at=now)
+        repo1 = Repository(provider="GITHUB", owner="codegate", name="codegate-core", full_name="codegate/codegate-core", url="https://github.com/codegate/codegate-core", default_branch="main", data_source="DEMO", github_connection_id=demo_conn.id, created_at=now - timedelta(days=60), updated_at=now)
+        repo2 = Repository(provider="GITHUB", owner="codegate", name="identity-service", full_name="codegate/identity-service", url="https://github.com/codegate/identity-service", default_branch="main", data_source="DEMO", github_connection_id=demo_conn.id, created_at=now - timedelta(days=90), updated_at=now)
+        repo3 = Repository(provider="GITHUB", owner="codegate", name="payment-platform", full_name="codegate/payment-platform", url="https://github.com/codegate/payment-platform", default_branch="main", data_source="DEMO", github_connection_id=demo_conn.id, created_at=now - timedelta(days=120), updated_at=now)
         
         session.add_all([repo1, repo2, repo3])
         session.commit()

@@ -1,15 +1,35 @@
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { GitBranch } from 'lucide-react';
+import { GitBranch, Database } from 'lucide-react';
+import { CodeGateAPI } from '../api/client';
 
 export function RepositoryDetail() {
   const { repositoryId } = useParams<{ repositoryId: string }>();
+  const [sysStatus, setSysStatus] = useState<any>(null);
+
+  useEffect(() => {
+    CodeGateAPI.getSystemStatus().then(setSysStatus).catch(() => {});
+  }, []);
 
   return (
     <div>
       {/* HERO */}
       <div className="page-hero">
         <div className="page-hero__content">
-          <p className="page-hero__kicker">REPOSITORY DETAILS</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <p className="page-hero__kicker">REPOSITORY DETAILS</p>
+            {sysStatus && (
+              <span style={{ 
+                fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px',
+                backgroundColor: sysStatus.data_mode === 'DEMO' ? 'var(--cg-amber-10)' : 'var(--cg-green-10)',
+                color: sysStatus.data_mode === 'DEMO' ? 'var(--cg-amber)' : 'var(--cg-green)',
+                border: `1px solid ${sysStatus.data_mode === 'DEMO' ? 'var(--cg-amber-30)' : 'var(--cg-green-30)'}`
+              }}>
+                <Database size={10} style={{ display: 'inline', marginRight: '4px' }}/>
+                {sysStatus.data_mode} MODE
+              </span>
+            )}
+          </div>
           <h2 className="page-hero__title">Repository #{repositoryId}</h2>
           <p className="page-hero__desc">
             View quality, risk, and policy metrics for this repository.

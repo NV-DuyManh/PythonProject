@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CodeGateAPI } from '../api/client';
 import type { PRDashboardItem } from '../types';
-import { GitPullRequest, RefreshCw, AlertTriangle, Search } from 'lucide-react';
+import { GitPullRequest, RefreshCw, AlertTriangle, Search, Database } from 'lucide-react';
 
 function policyBadgeClass(decision: string | null): string {
   if (!decision) return 'badge badge--gray';
@@ -39,6 +39,7 @@ function riskBadgeClass(level: string | null): string {
 
 export function PullRequests() {
   const [data, setData] = useState<PRDashboardItem[]>([]);
+  const [sysStatus, setSysStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -46,8 +47,14 @@ export function PullRequests() {
   const load = () => {
     setLoading(true);
     setError(null);
-    CodeGateAPI.getPullRequests()
-      .then(setData)
+    Promise.all([
+      CodeGateAPI.getPullRequests(),
+      CodeGateAPI.getSystemStatus()
+    ])
+      .then(([prs, status]) => {
+        setData(prs);
+        setSysStatus(status);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   };
@@ -89,7 +96,20 @@ export function PullRequests() {
       {/* HERO */}
       <div className="page-hero">
         <div className="page-hero__content">
-          <p className="page-hero__kicker">CODE REVIEW</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <p className="page-hero__kicker">CODE REVIEW</p>
+            {sysStatus && (
+              <span style={{ 
+                fontSize: '11px', fontWeight: 'bold', padding: '2px 8px', borderRadius: '12px',
+                backgroundColor: sysStatus.data_mode === 'DEMO' ? 'var(--cg-amber-10)' : 'var(--cg-green-10)',
+                color: sysStatus.data_mode === 'DEMO' ? 'var(--cg-amber)' : 'var(--cg-green)',
+                border: `1px solid ${sysStatus.data_mode === 'DEMO' ? 'var(--cg-amber-30)' : 'var(--cg-green-30)'}`
+              }}>
+                <Database size={10} style={{ display: 'inline', marginRight: '4px' }}/>
+                {sysStatus.data_mode} MODE
+              </span>
+            )}
+          </div>
           <h2 className="page-hero__title">Pull Requests</h2>
           <p className="page-hero__desc">Track quality, risk, tests and merge readiness.</p>
         </div>

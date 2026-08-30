@@ -20,14 +20,26 @@ def test_webhook_event_lifecycle_and_dedup(db_session: Session):
     # This will verify the webhook dedup using DB UniqueConstraint indirectly,
     # because if we insert exactly the same provider & delivery_id, it should return ignored.
     delivery_id = "test-delivery-id-lifecycle-999"
-    headers = {
-        "X-GitHub-Event": "pull_request",
-        "X-GitHub-Delivery": delivery_id
-    }
+    
     body = {
         "action": "opened",
         "pull_request": {"number": 99, "html_url": "https://github.com/foo/bar/pull/99"},
         "repository": {"full_name": "foo/bar"}
+    }
+    
+    # Calculate signature
+    import hmac
+    import hashlib
+    import json
+    
+    secret = "codegate-secret".encode()
+    payload = json.dumps(body, separators=(',', ':')).encode("utf-8")
+    signature = hmac.new(secret, payload, hashlib.sha256).hexdigest()
+    
+    headers = {
+        "X-GitHub-Event": "pull_request",
+        "X-GitHub-Delivery": delivery_id,
+        "X-Hub-Signature-256": f"sha256={signature}"
     }
     
     # Send the first one
