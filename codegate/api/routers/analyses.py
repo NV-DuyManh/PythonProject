@@ -6,8 +6,10 @@ from codegate.api.pagination import get_pagination_params, PaginationParams, pag
 from codegate.schemas.pagination import PaginatedResponse
 from codegate.schemas.analysis import AnalysisRunCreate, AnalysisRunResponse, CodeMetricResponse
 from codegate.schemas.quality import QualityScoreResponse
+from codegate.schemas.risk import RiskScoreResponse
 from codegate.services.analysis_service import analysis_service
 from codegate.services.quality_service import quality_service
+from codegate.services.risk_service import risk_service
 
 router = APIRouter(tags=["Analyses"])
 
@@ -69,3 +71,19 @@ def recalculate_analysis_quality(
 ):
     """Recalculate the quality score for an analysis run"""
     return quality_service.recalculate(db, analysis_id)
+
+@router.get("/analyses/{analysis_id}/risk", response_model=RiskScoreResponse)
+def get_analysis_risk(
+    analysis_id: int,
+    db: Session = Depends(get_db)
+):
+    """Retrieve the latest risk score for an analysis run"""
+    return risk_service.get_risk(db, analysis_id)
+
+@router.post("/analyses/{analysis_id}/risk/recalculate", response_model=RiskScoreResponse)
+def recalculate_analysis_risk(
+    analysis_id: int,
+    db: Session = Depends(get_db)
+):
+    """Recalculate the risk score for an analysis run"""
+    return risk_service.recalculate(db, analysis_id)

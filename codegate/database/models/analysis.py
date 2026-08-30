@@ -97,6 +97,11 @@ class AnalysisRun(Base, TimestampMixin):
         back_populates="analysis_run",
         cascade="all, delete-orphan"
     )
+    risk_scores: Mapped[List["RiskScore"]] = relationship(
+        "RiskScore",
+        back_populates="analysis_run",
+        cascade="all, delete-orphan"
+    )
 
 
 class Finding(Base):
@@ -205,3 +210,32 @@ class QualityScore(Base, TimestampMixin):
     calculation_version: Mapped[str] = mapped_column(String(50), nullable=False)
 
     analysis_run: Mapped["AnalysisRun"] = relationship("AnalysisRun", back_populates="quality_scores")
+
+class RiskScore(Base, TimestampMixin):
+    __tablename__ = "risk_scores"
+    __table_args__ = (
+        UniqueConstraint('analysis_run_id', 'calculation_version', name='uq_risk_score_version'),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    analysis_run_id: Mapped[int] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    
+    overall_risk: Mapped[float] = mapped_column(nullable=False)
+    risk_level: Mapped[str] = mapped_column(String(50), nullable=False)
+    
+    change_surface_risk: Mapped[Optional[float]] = mapped_column(nullable=True)
+    sensitive_path_risk: Mapped[Optional[float]] = mapped_column(nullable=True)
+    security_risk: Mapped[Optional[float]] = mapped_column(nullable=True)
+    complexity_risk: Mapped[Optional[float]] = mapped_column(nullable=True)
+    
+    available_weight: Mapped[float] = mapped_column(nullable=False)
+    is_complete: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    
+    missing_dimensions: Mapped[Optional[Any]] = mapped_column(JSONType, nullable=True)
+    breakdown_json: Mapped[Any] = mapped_column(JSONType, nullable=False)
+    
+    calculation_version: Mapped[str] = mapped_column(String(50), nullable=False)
+
+    analysis_run: Mapped["AnalysisRun"] = relationship("AnalysisRun", back_populates="risk_scores")

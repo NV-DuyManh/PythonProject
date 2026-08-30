@@ -1,28 +1,28 @@
-from typing import Optional, List, Any
+from typing import Optional
 from sqlalchemy import select, desc
 from sqlalchemy.orm import Session
 
-from codegate.database.models import QualityScore
+from codegate.database.models import RiskScore
 from codegate.repositories.base_store import BaseStore
 
-class QualityScoreStore(BaseStore[QualityScore]):
+class RiskScoreStore(BaseStore[RiskScore]):
     def __init__(self):
-        super().__init__(QualityScore)
+        super().__init__(RiskScore)
 
-    def get_latest_for_analysis(self, db: Session, analysis_run_id: int) -> Optional[QualityScore]:
-        stmt = select(QualityScore).where(
-            QualityScore.analysis_run_id == analysis_run_id
-        ).order_by(desc(QualityScore.created_at), desc(QualityScore.id)).limit(1)
+    def get_latest_for_analysis(self, db: Session, analysis_run_id: int) -> Optional[RiskScore]:
+        stmt = select(RiskScore).where(
+            RiskScore.analysis_run_id == analysis_run_id
+        ).order_by(desc(RiskScore.created_at), desc(RiskScore.id)).limit(1)
         return db.scalar(stmt)
 
-    def upsert(self, db: Session, obj_in: dict) -> QualityScore:
-        """Upsert a QualityScore based on (analysis_run_id, calculation_version)"""
+    def upsert(self, db: Session, obj_in: dict) -> RiskScore:
+        """Upsert a RiskScore based on (analysis_run_id, calculation_version)"""
         analysis_run_id = obj_in['analysis_run_id']
         calculation_version = obj_in['calculation_version']
         
-        stmt = select(QualityScore).where(
-            QualityScore.analysis_run_id == analysis_run_id,
-            QualityScore.calculation_version == calculation_version
+        stmt = select(RiskScore).where(
+            RiskScore.analysis_run_id == analysis_run_id,
+            RiskScore.calculation_version == calculation_version
         )
         existing = db.scalar(stmt)
         
@@ -38,10 +38,10 @@ class QualityScoreStore(BaseStore[QualityScore]):
             db.refresh(existing)
             return existing
         else:
-            new_obj = QualityScore(**obj_in)
+            new_obj = RiskScore(**obj_in)
             db.add(new_obj)
             db.commit()
             db.refresh(new_obj)
             return new_obj
 
-quality_store = QualityScoreStore()
+risk_store = RiskScoreStore()

@@ -8,6 +8,7 @@ from codegate.database.models.analysis import AnalysisRun, Status, Trigger, Find
 from codegate.integrations.pr_agent.adapter import CodeGateAdapter
 from codegate.integrations.pr_agent.normalizer import PRAgentNormalizer
 from codegate.services.quality_service import quality_service
+from codegate.services.risk_service import risk_service
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,9 @@ class AnalysisOrchestrator:
             
             # Calculate Quality Score (errors caught inside, shouldn't fail the run)
             quality_service.calculate_and_persist(self.db, run.id)
+            
+            # Calculate Risk Score (independent from Quality)
+            risk_service.calculate_and_persist(self.db, run.id)
 
             # Complete Run
             run.status = Status.COMPLETED
