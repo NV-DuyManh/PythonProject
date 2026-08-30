@@ -1,7 +1,7 @@
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Tuple, Any
 from sqlalchemy.orm import Session
-from sqlalchemy import func, select, and_, desc
+from sqlalchemy import func, select, and_, desc, case
 
 from codegate.database.models import (
     Repository, PullRequest, AnalysisRun, 
@@ -77,9 +77,9 @@ class AnalyticsStore:
 
         # Policy
         p_stmt = select(
-            func.sum(func.case((PolicyEvaluation.decision == PolicyDecision.PASS, 1), else_=0)),
-            func.sum(func.case((PolicyEvaluation.decision == PolicyDecision.WARNING, 1), else_=0)),
-            func.sum(func.case((PolicyEvaluation.decision == PolicyDecision.BLOCK, 1), else_=0)),
+            func.sum(case((PolicyEvaluation.decision == PolicyDecision.PASS, 1), else_=0)),
+            func.sum(case((PolicyEvaluation.decision == PolicyDecision.WARNING, 1), else_=0)),
+            func.sum(case((PolicyEvaluation.decision == PolicyDecision.BLOCK, 1), else_=0)),
             func.count(PolicyEvaluation.id)
         )
         p_stmt = p_stmt.join(AnalysisRun, AnalysisRun.id == PolicyEvaluation.analysis_run_id)
@@ -95,8 +95,8 @@ class AnalyticsStore:
 
         # Testing
         t_stmt = select(
-            func.sum(func.case((TestRun.outcome == "PASSED", 1), else_=0)),
-            func.sum(func.case((TestRun.outcome == "FAILED", 1), else_=0)),
+            func.sum(case((TestRun.test_outcome == "PASSED", 1), else_=0)),
+            func.sum(case((TestRun.test_outcome == "FAILED", 1), else_=0)),
             func.count(TestRun.id)
         )
         t_stmt = t_stmt.join(AnalysisRun, AnalysisRun.id == TestRun.analysis_run_id)
@@ -123,9 +123,9 @@ class AnalyticsStore:
 
         # Findings
         f_stmt = select(
-            func.sum(func.case((Finding.severity == "CRITICAL", 1), else_=0)),
-            func.sum(func.case((Finding.severity == "HIGH", 1), else_=0)),
-            func.sum(func.case((and_(Finding.severity == "HIGH", Finding.category == "SECURITY"), 1), else_=0)),
+            func.sum(case((Finding.severity == "CRITICAL", 1), else_=0)),
+            func.sum(case((Finding.severity == "HIGH", 1), else_=0)),
+            func.sum(case((and_(Finding.severity == "HIGH", Finding.category == "SECURITY"), 1), else_=0)),
         )
         f_stmt = f_stmt.join(AnalysisRun, AnalysisRun.id == Finding.analysis_run_id)
         if repository_id:

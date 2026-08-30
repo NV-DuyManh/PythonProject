@@ -62,7 +62,7 @@ class ReviewerRecommendationService:
         changed_files = [f.file_path for f in pr.files]
         
         # Author exclusion
-        author_username = pr.author
+        author_username = pr.author_username
         
         eligible_user_ids = self._get_eligible_user_ids(db, config.eligible_roles)
         

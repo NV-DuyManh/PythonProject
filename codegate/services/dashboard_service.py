@@ -130,12 +130,14 @@ class DashboardService:
                 repository=repo.name if repo else "",
                 number=pr.number,
                 title=pr.title,
-                author=pr.author,
+                description=pr.description,
+                author=pr.author_username,
+                source_branch=pr.source_branch,
                 state=pr.state,
-                head_sha=pr.head_sha if hasattr(pr, 'head_sha') else "",
-                base_sha=pr.base_sha if hasattr(pr, 'base_sha') else "",
+                head_sha=(pr.head_sha or "") if hasattr(pr, 'head_sha') else "",
+                base_sha=(pr.base_sha or "") if hasattr(pr, 'base_sha') else "",
                 latest_analysis_id=ar.id if ar else None,
-                analysis_status=ar.status.value if ar else None,
+                analysis_status=getattr(ar.status, 'value', ar.status) if ar else None,
                 quality_score=None,
                 quality_grade=None,
                 risk_score=None,
@@ -162,11 +164,11 @@ class DashboardService:
                     
                 policy = db.scalar(select(PolicyEvaluation).where(PolicyEvaluation.analysis_run_id == ar.id))
                 if policy:
-                    item.policy_decision = policy.decision.value if policy.decision else None
+                    item.policy_decision = getattr(policy.decision, 'value', policy.decision) if policy.decision else None
                     
                 test = db.scalar(select(TestRun).where(TestRun.analysis_run_id == ar.id))
                 if test:
-                    item.test_outcome = test.outcome
+                    item.test_outcome = test.test_outcome
                     cov = db.scalar(select(CoverageReport).where(CoverageReport.test_run_id == test.id))
                     if cov:
                         item.changed_line_coverage = cov.changed_line_coverage
@@ -207,11 +209,13 @@ class DashboardService:
             id=pr.id,
             number=pr.number,
             title=pr.title,
-            author=pr.author,
+            description=pr.description,
+            author=pr.author_username,
+            source_branch=pr.source_branch,
             state=pr.state,
             repository=repo.name if repo else "",
-            base_sha=pr.base_sha if hasattr(pr, 'base_sha') else "",
-            head_sha=pr.head_sha if hasattr(pr, 'head_sha') else ""
+            base_sha=(pr.base_sha or "") if hasattr(pr, 'base_sha') else "",
+            head_sha=(pr.head_sha or "") if hasattr(pr, 'head_sha') else "",
         )
         
         # Target specific analysis, or latest
@@ -262,7 +266,7 @@ class DashboardService:
         p_comp = None
         if policy:
             p_comp = PolicyDetailComponent(
-                decision=policy.decision.value if policy.decision else "",
+                decision=getattr(policy.decision, 'value', policy.decision) if policy.decision else "",
                 policy_revision=policy.policy_revision,
                 engine_version=policy.policy_engine_version,
                 passed_rules=policy.passed_rules_count or 0,
@@ -276,12 +280,12 @@ class DashboardService:
         if test:
             t_comp = TestsDetailComponent(
                 execution_status=test.execution_status,
-                test_outcome=test.outcome,
-                total=test.total_tests or 0,
-                passed=test.passed_tests or 0,
-                failed=test.failed_tests or 0,
-                errors=test.errors or 0,
-                skipped=test.skipped_tests or 0,
+                test_outcome=test.test_outcome,
+                total=test.tests_total or 0,
+                passed=test.tests_passed or 0,
+                failed=test.tests_failed or 0,
+                errors=test.tests_errors or 0,
+                skipped=test.tests_skipped or 0,
                 duration=test.duration_ms / 1000.0 if test.duration_ms else None
             )
             

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Optional
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, case
 
 from codegate.database.models import (
     Repository, PullRequest, AnalysisRun, 
@@ -105,9 +105,9 @@ class AnalyticsService:
         self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime]
     ) -> PolicyAnalytics:
         stmt = select(
-            func.sum(func.case((PolicyEvaluation.decision == "PASS", 1), else_=0)),
-            func.sum(func.case((PolicyEvaluation.decision == "WARNING", 1), else_=0)),
-            func.sum(func.case((PolicyEvaluation.decision == "BLOCK", 1), else_=0)),
+            func.sum(case((PolicyEvaluation.decision == "PASS", 1), else_=0)),
+            func.sum(case((PolicyEvaluation.decision == "WARNING", 1), else_=0)),
+            func.sum(case((PolicyEvaluation.decision == "BLOCK", 1), else_=0)),
             func.count(PolicyEvaluation.id)
         )
         stmt = stmt.join(AnalysisRun, AnalysisRun.id == PolicyEvaluation.analysis_run_id)
@@ -139,7 +139,7 @@ class AnalyticsService:
     ) -> FindingsAnalytics:
         stmt = select(
             func.count(Finding.id),
-            func.sum(func.case((Finding.is_changed_file == True, 1), else_=0))
+            func.sum(case((Finding.is_changed_file == True, 1), else_=0))
         )
         stmt = stmt.join(AnalysisRun, AnalysisRun.id == Finding.analysis_run_id)
         if repository_id:
@@ -181,9 +181,9 @@ class AnalyticsService:
         self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime]
     ) -> TestingAnalytics:
         stmt = select(
-            func.sum(func.case((TestRun.outcome == "PASSED", 1), else_=0)),
-            func.sum(func.case((TestRun.outcome == "FAILED", 1), else_=0)),
-            func.sum(func.case((TestRun.outcome == "UNKNOWN", 1), else_=0)),
+            func.sum(case((TestRun.test_outcome == "PASSED", 1), else_=0)),
+            func.sum(case((TestRun.test_outcome == "FAILED", 1), else_=0)),
+            func.sum(case((TestRun.test_outcome == "UNKNOWN", 1), else_=0)),
             func.avg(TestRun.duration_ms),
             func.count(TestRun.id)
         )
