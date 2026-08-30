@@ -49,7 +49,7 @@ class QualityPolicyService:
         try:
             quality = quality_store.get_latest_for_analysis(db, analysis_run.id)
             risk = risk_store.get_latest_for_analysis(db, analysis_run.id)
-            findings = finding_store.list(db, analysis_run_id=analysis_run.id)[0]
+            findings = finding_store.list_by_analysis(db, analysis_run_id=analysis_run.id)
             
             # Testing
             from codegate.repositories.testing_store import TestingStore
