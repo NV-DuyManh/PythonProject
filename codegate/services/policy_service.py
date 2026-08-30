@@ -82,7 +82,7 @@ class QualityPolicyService:
             })
             
             if publisher:
-                summary = self._build_check_summary(evaluation, quality, risk, test_run, cov_report)
+                summary = self._build_check_summary(db, evaluation, quality, risk, test_run, cov_report)
                 try:
                     check_id = publisher.publish(
                         result=result,
@@ -123,7 +123,7 @@ class QualityPolicyService:
                     pass
             return evaluation
             
-    def _build_check_summary(self, evaluation, quality, risk, test_run=None, cov_report=None) -> str:
+    def _build_check_summary(self, db, evaluation, quality, risk, test_run=None, cov_report=None) -> str:
         q_val = f"{quality.overall_score:.2f} ({quality.grade})" if quality else "Not available"
         r_val = f"{risk.overall_risk:.2f} ({risk.risk_level})" if risk else "Not available"
         
@@ -150,7 +150,7 @@ class QualityPolicyService:
             if cov_report.changed_line_coverage is not None:
                 changed_cov = f"{cov_report.changed_line_coverage:.2f}%"
         
-        return f"""### CodeGate Policy Evaluation
+        summary_text = f"""### CodeGate Policy Evaluation
 - **Decision:** {evaluation.decision}
 - **Quality Score:** {q_val}
 - **Risk Score:** {r_val}
@@ -162,7 +162,29 @@ class QualityPolicyService:
 - **Changed-Code Coverage:** {changed_cov}
 - **Blocking Rules:** {evaluation.blocked_rules_count}
 - **Warning Rules:** {evaluation.warning_rules_count}
+
+### Suggested Reviewers
 """
+        try:
+            from codegate.services.reviewer_service import reviewer_service
+            rec = reviewer_service.get_latest(db, evaluation.analysis_run_id)
+            if not rec:
+                summary_text += "No suitable reviewer found.\n"
+            elif rec["status"] == "SKIPPED":
+                summary_text += "Disabled.\n"
+            elif rec["status"] == "FAILED":
+                summary_text += "Unavailable.\n"
+            elif not rec["recommendations"]:
+                summary_text += "No suitable reviewer found.\n"
+            else:
+                for i, r in enumerate(rec["recommendations"]):
+                    score_str = f"{r['overall_score']:.1f}"
+                    reasons = "; ".join(r["reasons"])
+                    summary_text += f"{i+1}. @{r['provider_username']} — {score_str}\n   {reasons}\n\n"
+        except Exception:
+            summary_text += "Unavailable.\n"
+            
+        return summary_text
 
     def _build_check_text(self, evaluation) -> str:
         text = "### Detailed Policy Evaluation\n\n"

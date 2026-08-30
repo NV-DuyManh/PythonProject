@@ -134,6 +134,15 @@ class AnalysisOrchestrator:
             # Calculate Risk Score (independent from Quality)
             risk_service.calculate_and_persist(self.db, run.id)
 
+            # Execute Reviewer Recommendation Engine
+            try:
+                from codegate.services.reviewer_service import reviewer_service
+                git_provider = get_git_provider()(pr_url)
+                repo_path = getattr(git_provider, "repo_path", ".")
+                reviewer_service.evaluate_and_persist(self.db, run, repo_path=repo_path)
+            except Exception as e:
+                logger.error(f"Reviewer recommendation failed for AnalysisRun {run.id}: {e}", exc_info=True)
+
             # Evaluate Quality Policy and Publish GitHub Check
             try:
                 git_provider = get_git_provider()(pr_url)

@@ -7,9 +7,11 @@ from codegate.database.models.analysis import AnalysisRun, Finding, Status, Trig
 from codegate.database.models.webhook import WebhookEvent
 from codegate.database.models.policy import QualityPolicy, PolicyEvaluation, PolicyDecision, EvaluationStatus, PublishStatus
 from codegate.database.models.testing import TestConfiguration, TestRun, CoverageReport
+from codegate.database.models.reviewer import ReviewerRecommendationConfig, ReviewerRecommendation, ReviewerRecommendationCandidate
 
 __all__ = [
     "Base",
+    "TimestampMixin",
     "User",
     "Team",
     "TeamMember",
@@ -35,5 +37,8 @@ __all__ = [
     "PublishStatus",
     "TestConfiguration",
     "TestRun",
-    "CoverageReport"
+    "CoverageReport",
+    "ReviewerRecommendationConfig",
+    "ReviewerRecommendation",
+    "ReviewerRecommendationCandidate"
 ]
