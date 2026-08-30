@@ -1,5 +1,9 @@
 from enum import Enum
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from codegate.database.models.pull_request import PullRequest
+    from codegate.database.models.policy import QualityPolicy
 from sqlalchemy import String, Boolean, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from codegate.database.base import Base, TimestampMixin
@@ -30,6 +34,13 @@ class Repository(Base, TimestampMixin):
         back_populates="repository", 
         cascade="all, delete-orphan"
     )
+    policies: Mapped[List["QualityPolicy"]] = relationship(
+        "QualityPolicy",
+        back_populates="repository",
+        cascade="all, delete-orphan"
+    )
+    test_configuration = relationship("TestConfiguration", back_populates="repository", cascade="all, delete-orphan")
+    test_run = relationship("TestRun", back_populates="repository", cascade="all, delete-orphan")
 
     __table_args__ = (
         UniqueConstraint("provider", "full_name", name="uix_provider_full_name"),

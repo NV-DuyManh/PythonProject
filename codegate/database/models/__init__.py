@@ -5,6 +5,7 @@ from codegate.database.models.repository import Repository, Provider
 from codegate.database.models.pull_request import PullRequest, PullRequestFile, State
 from codegate.database.models.analysis import AnalysisRun, Finding, Status, Trigger, Severity, Source, QualityScore, RiskScore
 from codegate.database.models.webhook import WebhookEvent
+from codegate.database.models.policy import QualityPolicy, PolicyEvaluation, PolicyDecision, EvaluationStatus, PublishStatus
 
 __all__ = [
     "Base",
@@ -25,5 +26,10 @@ __all__ = [
     "Source",
     "WebhookEvent",
     "QualityScore",
-    "RiskScore"
+    "RiskScore",
+    "QualityPolicy",
+    "PolicyEvaluation",
+    "PolicyDecision",
+    "EvaluationStatus",
+    "PublishStatus"
 ]

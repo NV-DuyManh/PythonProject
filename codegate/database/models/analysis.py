@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, List, Optional
 
 if TYPE_CHECKING:
     from codegate.database.models.pull_request import PullRequest
+    from codegate.database.models.policy import PolicyEvaluation
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.ext.compiler import compiles
@@ -99,6 +100,11 @@ class AnalysisRun(Base, TimestampMixin):
     )
     risk_scores: Mapped[List["RiskScore"]] = relationship(
         "RiskScore",
+        back_populates="analysis_run",
+        cascade="all, delete-orphan"
+    )
+    policy_evaluations: Mapped[List["PolicyEvaluation"]] = relationship(
+        "PolicyEvaluation",
         back_populates="analysis_run",
         cascade="all, delete-orphan"
     )

@@ -1,0 +1,61 @@
+from typing import Optional, List
+from codegate.database.models.analysis import QualityScore, RiskScore, Finding
+from codegate.engines.policy.schemas import PolicyConfig, PolicyEvaluationResult, PolicyDecision
+from codegate.engines.policy.rules import (
+    evaluate_quality_availability,
+    evaluate_quality_completeness,
+    evaluate_min_quality_score,
+    evaluate_risk_availability,
+    evaluate_risk_completeness,
+    evaluate_max_risk_score,
+    evaluate_max_critical_findings,
+    evaluate_max_high_security_findings
+)
+
+class QualityPolicyEngine:
+    @staticmethod
+    def evaluate(
+        config: PolicyConfig,
+        quality_score: Optional[QualityScore],
+        risk_score: Optional[RiskScore],
+        findings: List[Finding]
+    ) -> PolicyEvaluationResult:
+        rules_results = []
+        
+        # 1. Quality
+        rules_results.append(evaluate_quality_availability(config, quality_score))
+        res = evaluate_quality_completeness(config, quality_score)
+        if res: rules_results.append(res)
+        res = evaluate_min_quality_score(config, quality_score)
+        if res: rules_results.append(res)
+        
+        # 2. Risk
+        rules_results.append(evaluate_risk_availability(config, risk_score))
+        res = evaluate_risk_completeness(config, risk_score)
+        if res: rules_results.append(res)
+        res = evaluate_max_risk_score(config, risk_score)
+        if res: rules_results.append(res)
+        
+        # 3. Findings
+        rules_results.append(evaluate_max_critical_findings(config, findings))
+        rules_results.append(evaluate_max_high_security_findings(config, findings))
+        
+        # Aggregate decision (BLOCK > WARNING > PASS)
+        overall_decision = PolicyDecision.PASS
+        flags = []
+        for r in rules_results:
+            if r.status == PolicyDecision.BLOCK:
+                overall_decision = PolicyDecision.BLOCK
+            elif r.status == PolicyDecision.WARNING and overall_decision != PolicyDecision.BLOCK:
+                overall_decision = PolicyDecision.WARNING
+                
+            flags.extend(r.flags)
+            
+        # Deduplicate flags
+        flags = list(set(flags))
+        
+        return PolicyEvaluationResult(
+            decision=overall_decision,
+            rules=rules_results,
+            flags=flags
+        )

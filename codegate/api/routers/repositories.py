@@ -5,8 +5,11 @@ from codegate.api.dependencies import get_db
 from codegate.api.pagination import get_pagination_params, PaginationParams, paginate
 from codegate.schemas.pagination import PaginatedResponse
 from codegate.schemas.repository import RepositoryCreate, RepositoryUpdate, RepositoryResponse
+from codegate.schemas.policy import QualityPolicyResponse, QualityPolicyUpdate
 from codegate.services.repository_service import repository_service
+from codegate.repositories.policy_store import quality_policy_store
 from codegate.database.models import Provider
+from fastapi import HTTPException
 
 router = APIRouter(prefix="/repositories", tags=["Repositories"])
 
@@ -52,3 +55,44 @@ def delete_repository(
     db: Session = Depends(get_db)
 ):
     return repository_service.delete(db, repo_id)
+
+@router.get("/{repo_id}/policy", response_model=QualityPolicyResponse)
+def get_repository_policy(
+    repo_id: int,
+    db: Session = Depends(get_db)
+):
+    repo = repository_service.get(db, repo_id)
+    if not repo:
+        raise HTTPException(status_code=404, detail="Repository not found")
+        
+    policy = quality_policy_store.get_by_repository(db, repo_id)
+    if not policy:
+        policy = quality_policy_store.create_default(db, repo_id)
+    return policy
+
+@router.put("/{repo_id}/policy", response_model=QualityPolicyResponse)
+def update_repository_policy(
+    repo_id: int,
+    policy_in: QualityPolicyUpdate,
+    db: Session = Depends(get_db)
+):
+    repo = repository_service.get(db, repo_id)
+    if not repo:
+        raise HTTPException(status_code=404, detail="Repository not found")
+        
+    obj_in = policy_in.model_dump(exclude_unset=True)
+    
+    # Validation logic inside API (can be pushed to schemas but we'll do here for simplicity)
+    current_policy = quality_policy_store.get_by_repository(db, repo_id) or quality_policy_store.create_default(db, repo_id)
+    
+    pass_t = obj_in.get('quality_pass_threshold', current_policy.quality_pass_threshold)
+    block_t = obj_in.get('quality_block_threshold', current_policy.quality_block_threshold)
+    if block_t > pass_t:
+        raise HTTPException(status_code=422, detail="quality_block_threshold must be <= quality_pass_threshold")
+        
+    warn_r = obj_in.get('risk_warning_threshold', current_policy.risk_warning_threshold)
+    block_r = obj_in.get('risk_block_threshold', current_policy.risk_block_threshold)
+    if warn_r > block_r:
+        raise HTTPException(status_code=422, detail="risk_warning_threshold must be <= risk_block_threshold")
+        
+    return quality_policy_store.update_policy(db, repo_id, obj_in)

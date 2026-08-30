@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status, Query
+from fastapi import APIRouter, Depends, status, Query, HTTPException
 from sqlalchemy.orm import Session
 from typing import Optional
 from codegate.api.dependencies import get_db
@@ -7,9 +7,12 @@ from codegate.schemas.pagination import PaginatedResponse
 from codegate.schemas.analysis import AnalysisRunCreate, AnalysisRunResponse, CodeMetricResponse
 from codegate.schemas.quality import QualityScoreResponse
 from codegate.schemas.risk import RiskScoreResponse
+from codegate.schemas.policy import PolicyEvaluationResponse
 from codegate.services.analysis_service import analysis_service
 from codegate.services.quality_service import quality_service
 from codegate.services.risk_service import risk_service
+from codegate.services.policy_service import quality_policy_service
+from codegate.repositories.policy_store import policy_evaluation_store
 
 router = APIRouter(tags=["Analyses"])
 
@@ -87,3 +90,28 @@ def recalculate_analysis_risk(
 ):
     """Recalculate the risk score for an analysis run"""
     return risk_service.recalculate(db, analysis_id)
+
+@router.get("/analyses/{analysis_id}/policy", response_model=PolicyEvaluationResponse)
+def get_analysis_policy(
+    analysis_id: int,
+    db: Session = Depends(get_db)
+):
+    """Retrieve the latest policy evaluation for an analysis run"""
+    evaluation = policy_evaluation_store.get_latest_for_analysis(db, analysis_id)
+    if not evaluation:
+        raise HTTPException(status_code=404, detail="Policy evaluation not found")
+    return evaluation
+
+@router.post("/analyses/{analysis_id}/policy/evaluate", response_model=PolicyEvaluationResponse)
+def evaluate_analysis_policy(
+    analysis_id: int,
+    db: Session = Depends(get_db)
+):
+    """Recalculate policy evaluation for an analysis run"""
+    analysis = analysis_service.get(db, analysis_id)
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+    # Using None publisher here for manual recalculation so we don't spam checks,
+    # or we can pass a dummy publisher. The prompt requires evaluating using current policy.
+    # The default is publisher=None
+    return quality_policy_service.evaluate_and_publish(db, analysis)
