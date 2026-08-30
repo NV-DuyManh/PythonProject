@@ -102,7 +102,33 @@ class AnalysisOrchestrator:
             # Commit findings first so quality engine can read them
             self.db.commit()
             
+            # 1. Execute Tests & Coverage
+            try:
+                from codegate.services.test_service import TestExecutionService
+                from codegate.repositories.testing_store import TestingStore
+                from codegate.repositories.analysis_store import AnalysisStore
+                
+                git_provider = get_git_provider()(pr_url)
+                # Need local repo path. Pr agent adapter usually clones to a temp dir.
+                # Here we assume git_provider provides repo_path or it runs locally
+                repo_path = getattr(git_provider, "repo_path", ".")
+                base_sha = getattr(git_provider.pr, "base", {}).get("sha", "")
+                
+                test_service = TestExecutionService(TestingStore(), AnalysisStore())
+                # Fire and wait for tests
+                # Note: async call
+                await test_service.execute_tests(
+                    db=self.db,
+                    analysis_run_id=run.id,
+                    repo_path=repo_path,
+                    base_sha=base_sha,
+                    head_sha=run.head_sha
+                )
+            except Exception as e:
+                logger.error(f"Test execution failed for AnalysisRun {run.id}: {e}", exc_info=True)
+            
             # Calculate Quality Score (errors caught inside, shouldn't fail the run)
+            # Will read test results implicitly
             quality_service.calculate_and_persist(self.db, run.id)
             
             # Calculate Risk Score (independent from Quality)

@@ -108,6 +108,12 @@ class AnalysisRun(Base, TimestampMixin):
         back_populates="analysis_run",
         cascade="all, delete-orphan"
     )
+    test_run: Mapped["TestRun"] = relationship(
+        "TestRun",
+        uselist=False,
+        back_populates="analysis_run",
+        cascade="all, delete-orphan"
+    )
 
 
 class Finding(Base):

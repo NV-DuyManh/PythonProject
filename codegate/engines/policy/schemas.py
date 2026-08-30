@@ -22,6 +22,15 @@ class PolicyConfig(BaseModel):
     
     require_complete_quality: bool
     require_complete_risk: bool
+    
+    test_gate_enabled: bool = False
+    require_tests: bool = False
+    
+    coverage_gate_enabled: bool = False
+    require_coverage: bool = False
+    
+    changed_coverage_warning_threshold: float = 70.0
+    changed_coverage_block_threshold: float = 50.0
 
 
 class RuleResult(BaseModel):

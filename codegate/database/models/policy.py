@@ -59,6 +59,13 @@ class QualityPolicy(Base, TimestampMixin):
     require_complete_quality: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     require_complete_risk: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
+    test_gate_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    require_tests: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    coverage_gate_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    require_coverage: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    changed_coverage_warning_threshold: Mapped[float] = mapped_column(Float, nullable=False, default=70.0)
+    changed_coverage_block_threshold: Mapped[float] = mapped_column(Float, nullable=False, default=50.0)
+
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     repository: Mapped["Repository"] = relationship("Repository", back_populates="policies")

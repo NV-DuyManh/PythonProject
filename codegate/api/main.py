@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from codegate.api.exceptions import register_exception_handlers
 
-from codegate.api.routers import health, repositories, pull_requests, analyses, findings, webhooks
+from codegate.api.routers import health, repositories, pull_requests, analyses, findings, webhooks, testing
 
 app = FastAPI(
     title="CodeGate API",
@@ -31,4 +31,5 @@ app.include_router(repositories.router, prefix="/api/v1")
 app.include_router(pull_requests.router, prefix="/api/v1")
 app.include_router(analyses.router, prefix="/api/v1")
 app.include_router(findings.router, prefix="/api/v1")
+app.include_router(testing.router, prefix="/api/v1")
 app.include_router(webhooks.router)

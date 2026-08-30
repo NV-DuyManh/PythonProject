@@ -130,7 +130,18 @@ def calculate_maintainability() -> ComponentResult:
         included=False
     )
 
-def calculate_testing() -> ComponentResult:
+def calculate_testing(testing_score: Optional[float] = None) -> ComponentResult:
+    if testing_score is not None:
+        return ComponentResult(
+            name="testing",
+            score=testing_score,
+            canonical_weight=CANONICAL_WEIGHTS["testing"],
+            included=True,
+            finding_count=0,
+            penalty_total=0.0,
+            reasons=[Reason(finding_id=None, severity=None, reason=f"Score derived from test execution", penalty=0.0)]
+        )
+        
     return _calculate_findings_component(
         "testing",
         CANONICAL_WEIGHTS["testing"],

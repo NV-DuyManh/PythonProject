@@ -38,18 +38,32 @@ class QualityPolicyService:
             require_risk_score=policy.require_risk_score,
             require_complete_quality=policy.require_complete_quality,
             require_complete_risk=policy.require_complete_risk,
+            test_gate_enabled=policy.test_gate_enabled,
+            require_tests=policy.require_tests,
+            coverage_gate_enabled=policy.coverage_gate_enabled,
+            require_coverage=policy.require_coverage,
+            changed_coverage_warning_threshold=policy.changed_coverage_warning_threshold,
+            changed_coverage_block_threshold=policy.changed_coverage_block_threshold,
         )
 
         try:
             quality = quality_store.get_latest_for_analysis(db, analysis_run.id)
             risk = risk_store.get_latest_for_analysis(db, analysis_run.id)
             findings = finding_store.list(db, analysis_run_id=analysis_run.id)[0]
+            
+            # Testing
+            from codegate.repositories.testing_store import TestingStore
+            testing_store = TestingStore()
+            test_run = testing_store.get_test_run(db, analysis_run.id)
+            cov_report = test_run.coverage_report if test_run else None
 
             result = QualityPolicyEngine.evaluate(
                 config=policy_config,
                 quality_score=quality,
                 risk_score=risk,
-                findings=findings
+                findings=findings,
+                test_run=test_run,
+                coverage_report=cov_report
             )
             
             evaluation = policy_evaluation_store.upsert(db, {
@@ -68,7 +82,7 @@ class QualityPolicyService:
             })
             
             if publisher:
-                summary = self._build_check_summary(evaluation, quality, risk)
+                summary = self._build_check_summary(evaluation, quality, risk, test_run, cov_report)
                 try:
                     check_id = publisher.publish(
                         result=result,
@@ -109,14 +123,43 @@ class QualityPolicyService:
                     pass
             return evaluation
             
-    def _build_check_summary(self, evaluation, quality, risk) -> str:
+    def _build_check_summary(self, evaluation, quality, risk, test_run=None, cov_report=None) -> str:
         q_val = f"{quality.overall_score:.2f} ({quality.grade})" if quality else "Not available"
         r_val = f"{risk.overall_risk:.2f} ({risk.risk_level})" if risk else "Not available"
+        
+        tests_total = "Not available"
+        tests_passed = "Not available"
+        tests_failed = "Not available"
+        tests_skipped = "Not available"
+        overall_cov = "Not available"
+        changed_cov = "Not available"
+        
+        if test_run:
+            if test_run.tests_total is not None:
+                tests_total = str(test_run.tests_total)
+            if test_run.tests_passed is not None:
+                tests_passed = str(test_run.tests_passed)
+            if test_run.tests_failed is not None:
+                tests_failed = str(test_run.tests_failed)
+            if test_run.tests_skipped is not None:
+                tests_skipped = str((test_run.tests_skipped or 0) + (test_run.tests_errors or 0))
+                
+        if cov_report:
+            if cov_report.line_coverage is not None:
+                overall_cov = f"{cov_report.line_coverage:.2f}%"
+            if cov_report.changed_line_coverage is not None:
+                changed_cov = f"{cov_report.changed_line_coverage:.2f}%"
         
         return f"""### CodeGate Policy Evaluation
 - **Decision:** {evaluation.decision}
 - **Quality Score:** {q_val}
 - **Risk Score:** {r_val}
+- **Tests Total:** {tests_total}
+- **Tests Passed:** {tests_passed}
+- **Tests Failed:** {tests_failed}
+- **Tests Skipped/Errors:** {tests_skipped}
+- **Overall Coverage:** {overall_cov}
+- **Changed-Code Coverage:** {changed_cov}
 - **Blocking Rules:** {evaluation.blocked_rules_count}
 - **Warning Rules:** {evaluation.warning_rules_count}
 """

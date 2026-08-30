@@ -40,7 +40,7 @@ class Repository(Base, TimestampMixin):
         cascade="all, delete-orphan"
     )
     test_configuration = relationship("TestConfiguration", back_populates="repository", cascade="all, delete-orphan")
-    test_run = relationship("TestRun", back_populates="repository", cascade="all, delete-orphan")
+
 
     __table_args__ = (
         UniqueConstraint("provider", "full_name", name="uix_provider_full_name"),

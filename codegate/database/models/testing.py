@@ -2,6 +2,12 @@ from datetime import datetime
 from sqlalchemy import Integer, String, Boolean, Float, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from codegate.database.models.repository import Repository
+    from codegate.database.models.analysis import AnalysisRun
+
 from codegate.database.models import Base
 from codegate.database.models.analysis import JSONType
 
@@ -27,8 +33,7 @@ class TestConfiguration(Base):
     
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
-
-    repository = relationship("Repository", back_populates="test_configuration")
+    repository: Mapped["Repository"] = relationship("Repository", back_populates="test_configuration")
 
 
 class TestRun(Base):
@@ -64,8 +69,8 @@ class TestRun(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
-    analysis_run = relationship("AnalysisRun", back_populates="test_run")
-    coverage_report = relationship("CoverageReport", uselist=False, back_populates="test_run", cascade="all, delete-orphan")
+    analysis_run: Mapped["AnalysisRun"] = relationship("AnalysisRun", back_populates="test_run")
+    coverage_report: Mapped["CoverageReport"] = relationship("CoverageReport", uselist=False, back_populates="test_run", cascade="all, delete-orphan")
 
 
 class CoverageReport(Base):
@@ -93,4 +98,4 @@ class CoverageReport(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
-    test_run = relationship("TestRun", back_populates="coverage_report")
+    test_run: Mapped["TestRun"] = relationship("TestRun", back_populates="coverage_report")

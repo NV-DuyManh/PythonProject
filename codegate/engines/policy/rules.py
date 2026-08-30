@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Any
 from codegate.database.models.analysis import QualityScore, RiskScore, Finding, Severity, Source
 from codegate.engines.policy.schemas import PolicyConfig, RuleResult, PolicyDecision
 from codegate.engines.policy.config import *
@@ -277,3 +277,115 @@ def evaluate_max_high_security_findings(config: PolicyConfig, findings: List[Fin
             reason=f"Found {security_count} high/critical security findings on changed code, exceeding limit of {config.max_high_security_findings}.",
             flags=["HIGH_SECURITY_FINDING"]
         )
+        
+RULE_ID_TEST_EXECUTION = "test.execution"
+RULE_ID_COVERAGE = "test.coverage"
+
+def evaluate_test_result(config: PolicyConfig, test_run: Optional[Any]) -> Optional[RuleResult]:
+    if not config.test_gate_enabled:
+        return None
+        
+    if test_run is None or test_run.execution_status == "SKIPPED" or test_run.execution_status == "DISABLED":
+        if config.require_tests:
+            return RuleResult(
+                rule_id=RULE_ID_TEST_EXECUTION,
+                rule_name="Test Execution Required",
+                status=PolicyDecision.BLOCK,
+                actual_value="Missing",
+                expected_value="Passed Tests",
+                reason="Tests are required but were not executed.",
+                flags=["MISSING_TESTS"]
+            )
+        else:
+            return RuleResult(
+                rule_id=RULE_ID_TEST_EXECUTION,
+                rule_name="Test Execution",
+                status=PolicyDecision.WARNING,
+                actual_value="Missing",
+                expected_value="Passed Tests",
+                reason="Tests were not executed.",
+                flags=["MISSING_TESTS"]
+            )
+            
+    if test_run.test_outcome == "FAILED":
+        return RuleResult(
+            rule_id=RULE_ID_TEST_EXECUTION,
+            rule_name="Test Execution",
+            status=PolicyDecision.BLOCK,
+            actual_value="Failed",
+            expected_value="Passed",
+            reason=f"Tests failed: {test_run.tests_failed} failed, {test_run.tests_errors} errors.",
+            flags=["TEST_FAILURE"]
+        )
+        
+    return RuleResult(
+        rule_id=RULE_ID_TEST_EXECUTION,
+        rule_name="Test Execution",
+        status=PolicyDecision.PASS,
+        actual_value="Passed",
+        expected_value="Passed",
+        reason="Tests passed successfully."
+    )
+
+def evaluate_changed_code_coverage(config: PolicyConfig, coverage_report: Optional[Any]) -> Optional[RuleResult]:
+    if not config.coverage_gate_enabled:
+        return None
+        
+    if coverage_report is None or not coverage_report.is_complete:
+        if config.require_coverage:
+            return RuleResult(
+                rule_id=RULE_ID_COVERAGE,
+                rule_name="Coverage Required",
+                status=PolicyDecision.BLOCK,
+                actual_value="Missing",
+                expected_value="Available",
+                reason="Coverage is required but missing.",
+                flags=["MISSING_COVERAGE"]
+            )
+        else:
+            return RuleResult(
+                rule_id=RULE_ID_COVERAGE,
+                rule_name="Coverage",
+                status=PolicyDecision.WARNING,
+                actual_value="Missing",
+                expected_value="Available",
+                reason="Coverage report missing.",
+                flags=["MISSING_COVERAGE"]
+            )
+            
+    cov_val = coverage_report.changed_line_coverage
+    if cov_val is None:
+        cov_val = coverage_report.line_coverage
+        
+    if cov_val is None:
+        return None
+        
+    if cov_val < config.changed_coverage_block_threshold:
+        return RuleResult(
+            rule_id=RULE_ID_COVERAGE,
+            rule_name="Changed Code Coverage Block",
+            status=PolicyDecision.BLOCK,
+            actual_value=f"{cov_val:.1f}%",
+            expected_value=f">= {config.changed_coverage_block_threshold}%",
+            reason=f"Changed code coverage is {cov_val:.1f}%, below block threshold of {config.changed_coverage_block_threshold}%.",
+            flags=["LOW_COVERAGE"]
+        )
+    elif cov_val < config.changed_coverage_warning_threshold:
+        return RuleResult(
+            rule_id=RULE_ID_COVERAGE,
+            rule_name="Changed Code Coverage Warning",
+            status=PolicyDecision.WARNING,
+            actual_value=f"{cov_val:.1f}%",
+            expected_value=f">= {config.changed_coverage_warning_threshold}%",
+            reason=f"Changed code coverage is {cov_val:.1f}%, below warning threshold of {config.changed_coverage_warning_threshold}%.",
+            flags=["LOW_COVERAGE"]
+        )
+        
+    return RuleResult(
+        rule_id=RULE_ID_COVERAGE,
+        rule_name="Changed Code Coverage",
+        status=PolicyDecision.PASS,
+        actual_value=f"{cov_val:.1f}%",
+        expected_value=f">= {config.changed_coverage_warning_threshold}%",
+        reason="Coverage meets requirements."
+    )

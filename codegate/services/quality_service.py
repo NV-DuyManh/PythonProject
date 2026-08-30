@@ -24,8 +24,27 @@ class QualityScoreService:
             findings = analysis_run.findings
             metrics = analysis_run.code_metrics
             
+            # Testing Component Fetching
+            testing_score = None
+            try:
+                from codegate.repositories.testing_store import TestingStore
+                from codegate.engines.testing.schemas import ExecutionStatus, TestOutcome
+                testing_store = TestingStore()
+                test_run = testing_store.get_test_run(db, analysis_run_id)
+                if test_run and test_run.execution_status == ExecutionStatus.COMPLETED.value:
+                    if test_run.test_outcome == TestOutcome.FAILED.value:
+                        testing_score = 0.0
+                    elif test_run.test_outcome == TestOutcome.PASSED.value:
+                        cov_report = test_run.coverage_report
+                        if cov_report and cov_report.changed_line_coverage is not None:
+                            testing_score = cov_report.changed_line_coverage
+                        elif cov_report and cov_report.line_coverage is not None:
+                            testing_score = cov_report.line_coverage
+            except ImportError:
+                pass # If testing not fully initialized
+            
             # Engine calculation
-            engine_result = QualityScoreEngine.calculate(findings, metrics)
+            engine_result = QualityScoreEngine.calculate(findings, metrics, testing_score)
             
             # Persist
             breakdown = build_breakdown_json(engine_result)

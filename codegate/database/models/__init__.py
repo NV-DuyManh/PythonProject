@@ -6,6 +6,7 @@ from codegate.database.models.pull_request import PullRequest, PullRequestFile, 
 from codegate.database.models.analysis import AnalysisRun, Finding, Status, Trigger, Severity, Source, QualityScore, RiskScore
 from codegate.database.models.webhook import WebhookEvent
 from codegate.database.models.policy import QualityPolicy, PolicyEvaluation, PolicyDecision, EvaluationStatus, PublishStatus
+from codegate.database.models.testing import TestConfiguration, TestRun, CoverageReport
 
 __all__ = [
     "Base",
@@ -31,5 +32,8 @@ __all__ = [
     "PolicyEvaluation",
     "PolicyDecision",
     "EvaluationStatus",
-    "PublishStatus"
+    "PublishStatus",
+    "TestConfiguration",
+    "TestRun",
+    "CoverageReport"
 ]

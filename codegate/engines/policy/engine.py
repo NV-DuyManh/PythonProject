@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Any
 from codegate.database.models.analysis import QualityScore, RiskScore, Finding
 from codegate.engines.policy.schemas import PolicyConfig, PolicyEvaluationResult, PolicyDecision
 from codegate.engines.policy.rules import (
@@ -18,7 +18,9 @@ class QualityPolicyEngine:
         config: PolicyConfig,
         quality_score: Optional[QualityScore],
         risk_score: Optional[RiskScore],
-        findings: List[Finding]
+        findings: List[Finding],
+        test_run: Optional[Any] = None,
+        coverage_report: Optional[Any] = None
     ) -> PolicyEvaluationResult:
         rules_results = []
         
@@ -39,6 +41,13 @@ class QualityPolicyEngine:
         # 3. Findings
         rules_results.append(evaluate_max_critical_findings(config, findings))
         rules_results.append(evaluate_max_high_security_findings(config, findings))
+        
+        # 4. Testing
+        from codegate.engines.policy.rules import evaluate_test_result, evaluate_changed_code_coverage
+        res = evaluate_test_result(config, test_run)
+        if res: rules_results.append(res)
+        res = evaluate_changed_code_coverage(config, coverage_report)
+        if res: rules_results.append(res)
         
         # Aggregate decision (BLOCK > WARNING > PASS)
         overall_decision = PolicyDecision.PASS

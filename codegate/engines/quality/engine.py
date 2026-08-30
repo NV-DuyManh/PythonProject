@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from codegate.database.models.analysis import Finding, CodeMetric
 from codegate.engines.quality.schemas import QualityScoreResult
 from codegate.engines.quality.config import CALCULATION_VERSION, get_grade
@@ -14,13 +14,13 @@ from codegate.engines.quality.components import (
 class QualityScoreEngine:
     
     @staticmethod
-    def calculate(findings: List[Finding], metrics: List[CodeMetric]) -> QualityScoreResult:
+    def calculate(findings: List[Finding], metrics: List[CodeMetric], testing_score: Optional[float] = None) -> QualityScoreResult:
         components = [
             calculate_code_quality(findings),
             calculate_security(findings),
             calculate_complexity(metrics, findings),
             calculate_maintainability(),
-            calculate_testing(),
+            calculate_testing(testing_score),
             calculate_ai_review(findings)
         ]
         
