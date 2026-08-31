@@ -1,9 +1,12 @@
 import json
 from datetime import datetime, timezone
-from sqlalchemy import String, Boolean, DateTime, Integer, Float, ForeignKey, UniqueConstraint
+from typing import Any, List, Optional
+
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from typing import Optional, List, Any
+
 from codegate.database.base import Base
+
 
 class TimestampMixin:
     created_at: Mapped[datetime] = mapped_column(

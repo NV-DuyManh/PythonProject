@@ -1,12 +1,14 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+
 from codegate.api.dependencies import get_db
-from codegate.api.pagination import get_pagination_params, PaginationParams, paginate
-from codegate.schemas.pagination import PaginatedResponse
-from codegate.schemas.finding import FindingResponse
-from codegate.services.finding_service import finding_service
+from codegate.api.pagination import PaginationParams, get_pagination_params, paginate
 from codegate.database.models import Severity, Source
+from codegate.schemas.finding import FindingResponse
+from codegate.schemas.pagination import PaginatedResponse
+from codegate.services.finding_service import finding_service
 
 router = APIRouter(tags=["Findings"])
 

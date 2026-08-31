@@ -1,0 +1,35 @@
+FROM python:3.12-slim
+
+# Install system dependencies (git is required by PR-Agent)
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y git curl && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Setup a non-root user with a home directory
+RUN groupadd -r codegate && useradd -r -m -g codegate codegate
+RUN chown -R codegate:codegate /app
+
+# Install Python dependencies first for cache efficiency
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY codegate/ /app/codegate/
+COPY pr_agent/ /app/pr_agent/
+COPY alembic.ini /app/
+COPY pyproject.toml /app/
+
+# Switch to non-root user
+USER codegate
+
+# Setup python path to discover the modules
+ENV PYTHONPATH=/app
+
+# Expose backend port
+EXPOSE 8000
+
+# Start Uvicorn without reload for production
+CMD ["python", "-m", "uvicorn", "codegate.api.main:app", "--host", "0.0.0.0", "--port", "8000"]

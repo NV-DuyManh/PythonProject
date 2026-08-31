@@ -1,5 +1,7 @@
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from codegate.engines.policy.schemas import PolicyEvaluationResult
+
 
 def build_evaluation_breakdown(result: PolicyEvaluationResult) -> Dict[str, Any]:
     return {

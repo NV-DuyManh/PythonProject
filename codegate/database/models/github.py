@@ -1,8 +1,10 @@
 from datetime import datetime
-from sqlalchemy import String, DateTime, func, Integer
+
+from sqlalchemy import DateTime, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from codegate.database.base import Base
+
 
 class GitHubConnection(Base):
     __tablename__ = "github_connections"

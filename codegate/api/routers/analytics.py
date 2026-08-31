@@ -1,13 +1,17 @@
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, Query
 
-from codegate.database.session import get_db
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
+from codegate.database.session import get_db
 from codegate.schemas.analytics import (
-    QualityAnalytics, RiskAnalytics, PolicyAnalytics,
-    FindingsAnalytics, TestingAnalytics, ReviewerAnalytics
+    FindingsAnalytics,
+    PolicyAnalytics,
+    QualityAnalytics,
+    ReviewerAnalytics,
+    RiskAnalytics,
+    TestingAnalytics,
 )
 from codegate.services.analytics_service import analytics_service
 

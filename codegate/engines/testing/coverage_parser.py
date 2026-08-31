@@ -1,6 +1,7 @@
 import json
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
 from codegate.engines.testing.schemas import CoverageMetrics
 
 logger = logging.getLogger(__name__)

@@ -1,7 +1,9 @@
-from typing import Dict, Any, List
-from codegate.schemas.finding import FindingCreate
-from codegate.database.models.analysis import Source, Severity
 import json
+from typing import Any, Dict, List
+
+from codegate.database.models.analysis import Severity, Source
+from codegate.schemas.finding import FindingCreate
+
 
 class PRAgentNormalizer:
     """

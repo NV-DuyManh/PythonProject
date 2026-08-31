@@ -2,9 +2,9 @@ import json
 import logging
 from typing import List
 
+from codegate.database.models.analysis import Severity, Source, Status
 from codegate.engines.analyzers.base import BaseAnalyzer
-from codegate.engines.analyzers.schemas import AnalyzerResult, NormalizedMetric, NormalizedFinding
-from codegate.database.models.analysis import Source, Status, Severity
+from codegate.engines.analyzers.schemas import AnalyzerResult, NormalizedFinding, NormalizedMetric
 
 logger = logging.getLogger(__name__)
 

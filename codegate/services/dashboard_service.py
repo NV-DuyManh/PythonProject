@@ -1,21 +1,41 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import List, Optional
+
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, desc
 
 from codegate.database.models import (
-    Repository, PullRequest, AnalysisRun, 
-    QualityScore, RiskScore, PolicyEvaluation, 
-    TestRun, CoverageReport, Finding, Status
-)
-from codegate.schemas.dashboard import (
-    DashboardOverviewResponse, RepositoryDashboardItem, PRDashboardItem,
-    PullRequestDashboardDetail, PRDetailComponent, AnalysisDetailComponent,
-    QualityDetailComponent, RiskDetailComponent, PolicyDetailComponent,
-    TestsDetailComponent, CoverageDetailComponent, FindingsDetailComponent,
-    ReviewerDetailComponent, DashboardOverviewTrendPoint
+    AnalysisRun,
+    CoverageReport,
+    Finding,
+    PolicyEvaluation,
+    PullRequest,
+    QualityScore,
+    Repository,
+    RiskScore,
+    Status,
+    TestRun,
 )
 from codegate.repositories.analytics_store import analytics_store
+from codegate.schemas.dashboard import (
+    AnalysisDetailComponent,
+    CoverageDetailComponent,
+    DashboardOverviewResponse,
+    DashboardOverviewTrendPoint,
+    FindingsDetailComponent,
+    PolicyDetailComponent,
+    PRDashboardItem,
+    PRDetailComponent,
+    PullRequestDashboardDetail,
+    QualityDetailComponent,
+    RepositoryDashboardItem,
+    RepositoryDetailComponent,
+    RepositoryDetailResponse,
+    ReviewerDetailComponent,
+    RiskDetailComponent,
+    TestsDetailComponent,
+)
+
 
 class DashboardService:
     def get_overview(
@@ -87,6 +107,82 @@ class DashboardService:
         # Paginate
         start = (page - 1) * page_size
         return items[start:start + page_size]
+
+    def get_repository_detail(
+        self,
+        db: Session,
+        repository_id: int
+    ) -> Optional[RepositoryDetailResponse]:
+        repo = db.get(Repository, repository_id)
+        if not repo:
+            return None
+
+        kpis = analytics_store.get_overview_kpis(db, repository_id=repo.id)
+
+        # Last analysis timestamp
+        last_analysis_stmt = select(func.max(AnalysisRun.created_at)).join(
+            PullRequest, PullRequest.id == AnalysisRun.pull_request_id
+        ).where(PullRequest.repository_id == repo.id)
+        last_analysis_at = db.scalar(last_analysis_stmt)
+
+        repo_comp = RepositoryDetailComponent(
+            repository_id=repo.id,
+            name=repo.name,
+            provider=repo.provider,
+            active=repo.is_active if hasattr(repo, 'is_active') else True
+        )
+
+        health = {
+            "open_pr_count": kpis["open_pull_requests"],
+            "analysis_count": kpis["analyses_total"],
+            "analyses_completed": kpis["analyses_completed"],
+            "analyses_failed": kpis["analyses_failed"],
+            "average_quality": kpis["average_quality_score"],
+            "average_risk": kpis["average_risk_score"],
+            "last_analysis_at": last_analysis_at.isoformat() if last_analysis_at else None,
+        }
+
+        policy_summary = {
+            "pass_count": kpis["policy_pass_count"],
+            "warning_count": kpis["policy_warning_count"],
+            "block_count": kpis["policy_block_count"],
+            "pass_rate": kpis["policy_pass_rate"],
+            "block_rate": kpis["policy_block_rate"],
+        }
+
+        testing_summary = {
+            "test_pass_rate": kpis["test_pass_rate"],
+        }
+
+        coverage_summary = {
+            "average_changed_coverage": kpis["average_changed_line_coverage"],
+        }
+
+        finding_summary = {
+            "critical": kpis["critical_findings"],
+            "high": kpis["high_findings"],
+        }
+
+        # Recent PRs (up to 10)
+        recent_prs = self.get_pull_requests(db, repository_id=repo.id, page=1, page_size=10)
+
+        return RepositoryDetailResponse(
+            repository=repo_comp,
+            health=health,
+            policy_summary=policy_summary,
+            test_config_summary={},
+            reviewer_config_summary={},
+            recent_prs=recent_prs,
+            quality_distribution=kpis.get("quality_grade_distribution", {}),
+            risk_distribution=kpis.get("risk_level_distribution", {}),
+            policy_distribution=kpis.get("policy_decision_distribution", {}),
+            testing_summary=testing_summary,
+            coverage_summary=coverage_summary,
+            finding_summary=finding_summary,
+            top_security_rules=[],
+            sensitive_path_activity=[],
+            recent_analyses=[]
+        )
 
     def get_pull_requests(
         self,
@@ -329,7 +425,7 @@ class DashboardService:
             pr=pr_comp,
             analysis=AnalysisDetailComponent(
                 analysis_id=ar.id,
-                status=ar.status.value,
+                status=getattr(ar.status, 'value', ar.status),
                 created_at=ar.created_at,
                 completed_at=ar.completed_at
             ),

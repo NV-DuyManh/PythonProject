@@ -1,21 +1,22 @@
-from typing import List, Dict, Optional, Any
-from datetime import datetime, timezone
 import os
+from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
 
-from codegate.engines.reviewer.config import ReviewerEngineConfig
-from codegate.engines.reviewer.schemas import (
-    ReviewerIdentityInfo, 
-    RecommendationCandidate, 
-    ReviewerRecommendationResult
-)
 from codegate.engines.reviewer import REVIEWER_ENGINE_VERSION
-from codegate.engines.reviewer.identity import IdentityResolver
 from codegate.engines.reviewer.codeowners import CodeownersParser
-from codegate.engines.reviewer.git_history import GitHistoryAnalyzer
-from codegate.engines.reviewer.scoring import ReviewerScoringModel
+from codegate.engines.reviewer.config import ReviewerEngineConfig
 from codegate.engines.reviewer.explanation import ReviewerExplanationGenerator
+from codegate.engines.reviewer.git_history import GitHistoryAnalyzer
+from codegate.engines.reviewer.identity import IdentityResolver
+from codegate.engines.reviewer.schemas import (
+    RecommendationCandidate,
+    ReviewerIdentityInfo,
+    ReviewerRecommendationResult,
+)
+from codegate.engines.reviewer.scoring import ReviewerScoringModel
+
 
 class ReviewerRecommendationEngine:
     @staticmethod

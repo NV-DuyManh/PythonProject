@@ -1,7 +1,9 @@
-from typing import List, Dict, Any, Optional
-from codegate.database.models.analysis import Finding, CodeMetric
+from typing import Any, Dict, List, Optional
+
+from codegate.database.models.analysis import CodeMetric, Finding
+from codegate.engines.quality.config import CANONICAL_WEIGHTS, COMPLEXITY_GRADE_PENALTIES, SEVERITY_PENALTIES
 from codegate.engines.quality.schemas import ComponentResult, Reason
-from codegate.engines.quality.config import CANONICAL_WEIGHTS, SEVERITY_PENALTIES, COMPLEXITY_GRADE_PENALTIES
+
 
 def clamp(value: float, min_val: float = 0.0, max_val: float = 100.0) -> float:
     return max(min_val, min(value, max_val))

@@ -1,14 +1,16 @@
 from typing import List
-from codegate.database.models.analysis import Finding, CodeMetric, AnalyzerRun
+
+from codegate.database.models.analysis import AnalyzerRun, CodeMetric, Finding
 from codegate.database.models.pull_request import PullRequest, PullRequestFile
-from codegate.engines.risk.schemas import RiskScoreResult
-from codegate.engines.risk.config import RISK_CALCULATION_VERSION, get_risk_level
 from codegate.engines.risk.components import (
-    calculate_security_risk,
     calculate_change_surface_risk,
-    calculate_sensitive_path_risk,
     calculate_complexity_risk,
+    calculate_security_risk,
+    calculate_sensitive_path_risk,
 )
+from codegate.engines.risk.config import RISK_CALCULATION_VERSION, get_risk_level
+from codegate.engines.risk.schemas import RiskScoreResult
+
 
 class RiskScoreEngine:
     

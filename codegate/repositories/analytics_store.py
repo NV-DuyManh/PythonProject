@@ -1,13 +1,24 @@
-from datetime import datetime, timezone, timedelta
-from typing import Optional, Tuple, Any
+from datetime import datetime, timedelta, timezone
+from typing import Any, Optional, Tuple
+
+from sqlalchemy import and_, case, desc, func, select
 from sqlalchemy.orm import Session
-from sqlalchemy import func, select, and_, desc, case
 
 from codegate.database.models import (
-    Repository, PullRequest, AnalysisRun, 
-    QualityScore, RiskScore, PolicyEvaluation, 
-    TestRun, CoverageReport, Finding, Status, Trigger, PolicyDecision
+    AnalysisRun,
+    CoverageReport,
+    Finding,
+    PolicyDecision,
+    PolicyEvaluation,
+    PullRequest,
+    QualityScore,
+    Repository,
+    RiskScore,
+    Status,
+    TestRun,
+    Trigger,
 )
+
 
 class AnalyticsStore:
     def _apply_date_filter(self, stmt: Any, from_date: Optional[datetime], to_date: Optional[datetime], date_column: Any):

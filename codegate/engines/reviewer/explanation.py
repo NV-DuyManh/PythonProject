@@ -1,5 +1,7 @@
 from typing import List
+
 from codegate.engines.reviewer.schemas import RecommendationCandidate
+
 
 class ReviewerExplanationGenerator:
     @staticmethod

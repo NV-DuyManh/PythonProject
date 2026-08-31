@@ -1,7 +1,10 @@
 from typing import Optional
+
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
+
 from codegate.database.base import Base, TimestampMixin
+
 
 class User(Base, TimestampMixin):
     __tablename__ = "users"

@@ -1,11 +1,14 @@
-from typing import List, Tuple, Any
+from typing import Any, List, Tuple
+
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+
+from codegate.api.exceptions import ConflictException, NotFoundException
+from codegate.database.models import AnalysisRun, PullRequest, Status
 from codegate.repositories.analysis_store import analysis_store
 from codegate.repositories.pr_store import pr_store
-from codegate.database.models import AnalysisRun, Status, PullRequest
 from codegate.schemas.analysis import AnalysisRunCreate
-from codegate.api.exceptions import NotFoundException, ConflictException
+
 
 class AnalysisService:
     def create(self, db: Session, pr_id: int, analysis_in: AnalysisRunCreate) -> AnalysisRun:

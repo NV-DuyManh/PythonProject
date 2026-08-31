@@ -1,6 +1,9 @@
-from typing import Optional, List
+from typing import List, Optional
+
 from sqlalchemy.orm import Session
-from codegate.database.models.testing import TestConfiguration, TestRun, CoverageReport
+
+from codegate.database.models.testing import CoverageReport, TestConfiguration, TestRun
+
 
 class TestingStore:
     def get_test_configuration(self, db: Session, repository_id: int) -> Optional[TestConfiguration]:

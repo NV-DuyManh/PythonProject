@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
+
+from sqlalchemy import DateTime, MetaData
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-from sqlalchemy import MetaData, DateTime
 
 naming_convention = {
     "ix": "ix_%(column_0_label)s",

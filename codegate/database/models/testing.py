@@ -1,12 +1,13 @@
 from datetime import datetime
-from sqlalchemy import Integer, String, Boolean, Float, DateTime, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.sql import func
 from typing import TYPE_CHECKING
 
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.sql import func
+
 if TYPE_CHECKING:
-    from codegate.database.models.repository import Repository
     from codegate.database.models.analysis import AnalysisRun
+    from codegate.database.models.repository import Repository
 
 from codegate.database.models import Base
 from codegate.database.models.analysis import JSONType

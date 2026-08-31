@@ -1,15 +1,17 @@
 from typing import List, Optional
-from codegate.database.models.analysis import Finding, CodeMetric
-from codegate.engines.quality.schemas import QualityScoreResult
-from codegate.engines.quality.config import CALCULATION_VERSION, get_grade
+
+from codegate.database.models.analysis import CodeMetric, Finding
 from codegate.engines.quality.components import (
+    calculate_ai_review,
     calculate_code_quality,
-    calculate_security,
     calculate_complexity,
     calculate_maintainability,
+    calculate_security,
     calculate_testing,
-    calculate_ai_review,
 )
+from codegate.engines.quality.config import CALCULATION_VERSION, get_grade
+from codegate.engines.quality.schemas import QualityScoreResult
+
 
 class QualityScoreEngine:
     

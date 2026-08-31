@@ -1,10 +1,13 @@
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
+
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from codegate.database.models import Repository, Provider
+
+from codegate.api.exceptions import ConflictException, NotFoundException
+from codegate.database.models import Provider, Repository
 from codegate.repositories.repo_store import repo_store
 from codegate.schemas.repository import RepositoryCreate, RepositoryUpdate
-from codegate.api.exceptions import NotFoundException, ConflictException
-from sqlalchemy.exc import IntegrityError
+
 
 class RepositoryService:
     def create(self, db: Session, repo_in: RepositoryCreate) -> Repository:
@@ -37,7 +40,7 @@ class RepositoryService:
         # Here we just use the list from base_store and maybe implement simple filtering
         
         # Let's use SQLAlchemy directly for more complex queries
-        from sqlalchemy import select, func
+        from sqlalchemy import func, select
         stmt = select(Repository)
         if provider:
             stmt = stmt.where(Repository.provider == provider)

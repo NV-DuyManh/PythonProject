@@ -1,16 +1,17 @@
 import hashlib
 import hmac
-import logging
 import json
-from fastapi import APIRouter, Request, Response, HTTPException, BackgroundTasks, Depends
+import logging
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
-from pr_agent.config_loader import get_settings
 from codegate.api.dependencies import get_db
-from codegate.database.models.webhook import WebhookEvent
 from codegate.database.models.analysis import Trigger
-from codegate.services.github_sync_service import GithubSyncService
+from codegate.database.models.webhook import WebhookEvent
 from codegate.services.analysis_orchestrator import AnalysisOrchestrator
+from codegate.services.github_sync_service import GithubSyncService
+from pr_agent.config_loader import get_settings
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ def verify_signature(body: bytes, secret: str, signature: str):
         raise HTTPException(status_code=401, detail="Invalid signature")
 
 from codegate.database.session import SessionLocal
+
 
 async def process_webhook_task(delivery_id: str, event_type: str, action: str, body: dict):
     """

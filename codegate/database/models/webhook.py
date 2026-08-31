@@ -1,7 +1,7 @@
-from datetime import datetime
 import uuid
+from datetime import datetime
 
-from sqlalchemy import String, Integer, DateTime, Enum, UniqueConstraint
+from sqlalchemy import DateTime, Enum, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from codegate.database.base import Base

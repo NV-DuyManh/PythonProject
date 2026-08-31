@@ -1,8 +1,11 @@
-from typing import Optional, List
+from typing import List, Optional
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
 from codegate.database.models import PullRequest
 from codegate.repositories.base_store import BaseStore
+
 
 class PullRequestStore(BaseStore[PullRequest]):
     def __init__(self):

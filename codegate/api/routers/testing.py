@@ -1,16 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 from typing import Optional
 
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
 from codegate.api.dependencies import get_db
+from codegate.repositories.repo_store import repo_store
+from codegate.repositories.testing_store import TestingStore
 from codegate.schemas.testing import (
-    TestConfigurationResponse, 
+    CoverageReportResponse,
+    TestConfigurationResponse,
     TestConfigurationUpdate,
     TestRunResponse,
-    CoverageReportResponse
 )
-from codegate.repositories.testing_store import TestingStore
-from codegate.repositories.repo_store import repo_store
 
 router = APIRouter()
 testing_store = TestingStore()

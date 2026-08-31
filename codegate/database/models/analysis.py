@@ -3,8 +3,8 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, List, Optional
 
 if TYPE_CHECKING:
-    from codegate.database.models.pull_request import PullRequest
     from codegate.database.models.policy import PolicyEvaluation
+    from codegate.database.models.pull_request import PullRequest
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.ext.compiler import compiles

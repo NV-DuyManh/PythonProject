@@ -1,12 +1,12 @@
-import os
-import sys
-import time
-import subprocess
-import threading
-import tkinter as tk
-from tkinter import ttk, messagebox
-import webbrowser
 import json
+import os
+import subprocess
+import sys
+import threading
+import time
+import tkinter as tk
+import webbrowser
+from tkinter import messagebox, ttk
 
 # Ensure requests is available, otherwise fail gracefully
 try:

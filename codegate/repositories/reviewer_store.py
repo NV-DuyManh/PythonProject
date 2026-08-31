@@ -1,9 +1,16 @@
 import json
-from typing import List, Optional, Any
+from typing import Any, List, Optional
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
-from codegate.database.models import ReviewerRecommendationConfig, ReviewerRecommendation, ReviewerRecommendationCandidate
+
+from codegate.database.models import (
+    ReviewerRecommendation,
+    ReviewerRecommendationCandidate,
+    ReviewerRecommendationConfig,
+)
 from codegate.repositories.base_store import BaseStore
+
 
 class ReviewerRecommendationConfigStore(BaseStore[ReviewerRecommendationConfig]):
     def __init__(self):

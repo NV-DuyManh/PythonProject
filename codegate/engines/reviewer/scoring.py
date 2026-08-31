@@ -1,6 +1,8 @@
-from typing import List, Dict, Optional, Any, Tuple
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Tuple
+
 from codegate.engines.reviewer.schemas import RecommendationCandidate
+
 
 class ReviewerScoringModel:
     CODEOWNERS_WEIGHT = 40.0

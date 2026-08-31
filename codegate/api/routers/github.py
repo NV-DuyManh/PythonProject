@@ -1,10 +1,12 @@
+from typing import Any, Dict, List
+
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from sqlalchemy import select
-from codegate.database.session import get_db
-from codegate.database.models.github import GitHubConnection
 from pydantic import BaseModel
-from typing import Dict, Any, List
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from codegate.database.models.github import GitHubConnection
+from codegate.database.session import get_db
 
 router = APIRouter(prefix="/integrations/github", tags=["GitHub Integration"])
 

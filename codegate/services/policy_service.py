@@ -1,17 +1,18 @@
 import traceback
-from typing import Optional
-from sqlalchemy.orm import Session
 from datetime import datetime, timezone
+from typing import Optional
+
+from sqlalchemy.orm import Session
 
 from codegate.database.models import AnalysisRun
-from codegate.database.models.policy import QualityPolicy, PolicyEvaluation, EvaluationStatus, PublishStatus
-from codegate.repositories.policy_store import quality_policy_store, policy_evaluation_store
+from codegate.database.models.policy import EvaluationStatus, PolicyEvaluation, PublishStatus, QualityPolicy
+from codegate.engines.policy import POLICY_ENGINE_VERSION, QualityPolicyEngine
+from codegate.engines.policy.explanation import build_evaluation_breakdown
+from codegate.engines.policy.schemas import PolicyConfig
+from codegate.repositories.finding_store import finding_store
+from codegate.repositories.policy_store import policy_evaluation_store, quality_policy_store
 from codegate.repositories.quality_store import quality_store
 from codegate.repositories.risk_store import risk_store
-from codegate.repositories.finding_store import finding_store
-from codegate.engines.policy.schemas import PolicyConfig
-from codegate.engines.policy import QualityPolicyEngine, POLICY_ENGINE_VERSION
-from codegate.engines.policy.explanation import build_evaluation_breakdown
 from codegate.services.policy_publisher import PolicyCheckPublisher
 
 

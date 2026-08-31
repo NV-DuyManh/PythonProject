@@ -1,9 +1,12 @@
-from enum import Enum
-from typing import Optional, List
 from datetime import datetime, timezone
-from sqlalchemy import String, ForeignKey, UniqueConstraint, DateTime
+from enum import Enum
+from typing import List, Optional
+
+from sqlalchemy import DateTime, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from codegate.database.base import Base, TimestampMixin
+
 
 class Role(str, Enum):
     ADMIN = "ADMIN"

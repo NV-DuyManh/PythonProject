@@ -1,16 +1,17 @@
 import logging
-from typing import Optional, Dict, Any, Tuple
 from datetime import datetime, timezone
+from typing import Any, Dict, Optional, Tuple
+
 from sqlalchemy.orm import Session
 
+from codegate.database.models.analysis import AnalysisRun, Finding, Status, Trigger
 from codegate.database.models.pull_request import PullRequest
-from codegate.database.models.analysis import AnalysisRun, Status, Trigger, Finding
 from codegate.integrations.pr_agent.adapter import CodeGateAdapter
 from codegate.integrations.pr_agent.normalizer import PRAgentNormalizer
+from codegate.services.policy_publisher import GitHubPolicyCheckPublisher
+from codegate.services.policy_service import quality_policy_service
 from codegate.services.quality_service import quality_service
 from codegate.services.risk_service import risk_service
-from codegate.services.policy_service import quality_policy_service
-from codegate.services.policy_publisher import GitHubPolicyCheckPublisher
 from pr_agent.git_providers import get_git_provider
 
 logger = logging.getLogger(__name__)
@@ -104,9 +105,9 @@ class AnalysisOrchestrator:
             
             # 1. Execute Tests & Coverage
             try:
-                from codegate.services.test_service import TestExecutionService
-                from codegate.repositories.testing_store import TestingStore
                 from codegate.repositories.analysis_store import AnalysisStore
+                from codegate.repositories.testing_store import TestingStore
+                from codegate.services.test_service import TestExecutionService
                 
                 git_provider = get_git_provider()(pr_url)
                 # Need local repo path. Pr agent adapter usually clones to a temp dir.

@@ -1,6 +1,8 @@
-from pydantic import BaseModel, Field
-from typing import List, Optional, Any, Dict
 from datetime import datetime
+from typing import Any, Dict, List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class ReviewerIdentityInfo(BaseModel):
     user_id: int

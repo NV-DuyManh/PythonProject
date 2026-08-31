@@ -1,15 +1,16 @@
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, status
+
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
+
 from codegate.api.dependencies import get_db
-from codegate.api.pagination import get_pagination_params, PaginationParams, paginate
-from codegate.schemas.pagination import PaginatedResponse
-from codegate.schemas.repository import RepositoryCreate, RepositoryUpdate, RepositoryResponse
-from codegate.schemas.policy import QualityPolicyResponse, QualityPolicyUpdate
-from codegate.services.repository_service import repository_service
-from codegate.repositories.policy_store import quality_policy_store
+from codegate.api.pagination import PaginationParams, get_pagination_params, paginate
 from codegate.database.models import Provider
-from fastapi import HTTPException
+from codegate.repositories.policy_store import quality_policy_store
+from codegate.schemas.pagination import PaginatedResponse
+from codegate.schemas.policy import QualityPolicyResponse, QualityPolicyUpdate
+from codegate.schemas.repository import RepositoryCreate, RepositoryResponse, RepositoryUpdate
+from codegate.services.repository_service import repository_service
 
 router = APIRouter(prefix="/repositories", tags=["Repositories"])
 

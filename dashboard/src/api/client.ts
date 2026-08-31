@@ -25,6 +25,15 @@ export class CodeGateAPI {
     return res.json();
   }
 
+  static async getRepositoryDetail(id: number): Promise<any> {
+    const res = await fetch(`${API_BASE_URL}/dashboard/repositories/${id}`);
+    if (!res.ok) {
+      if (res.status === 404) throw new Error('Repository not found');
+      throw new Error('Failed to fetch repository detail');
+    }
+    return res.json();
+  }
+
   static async getPullRequests(): Promise<PRDashboardItem[]> {
     const res = await fetch(`${API_BASE_URL}/dashboard/pull-requests`);
     if (!res.ok) throw new Error('Failed to fetch PRs');

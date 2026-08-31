@@ -1,12 +1,18 @@
 import fnmatch
-from typing import List, Dict, Any, Tuple
-from codegate.database.models.analysis import Finding, CodeMetric, AnalyzerRun, Status
+from typing import Any, Dict, List, Tuple
+
+from codegate.database.models.analysis import AnalyzerRun, CodeMetric, Finding, Status
 from codegate.database.models.pull_request import PullRequest, PullRequestFile
-from codegate.engines.risk.schemas import RiskComponentResult, RiskReason
 from codegate.engines.risk.config import (
-    CANONICAL_WEIGHTS, SECURITY_POINTS, LINES_RISK_MAPPING, FILES_RISK_MAPPING, 
-    SENSITIVE_PATHS_TIERS, COMPLEXITY_MAPPING
+    CANONICAL_WEIGHTS,
+    COMPLEXITY_MAPPING,
+    FILES_RISK_MAPPING,
+    LINES_RISK_MAPPING,
+    SECURITY_POINTS,
+    SENSITIVE_PATHS_TIERS,
 )
+from codegate.engines.risk.schemas import RiskComponentResult, RiskReason
+
 
 def _clamp(value: float, min_val: float = 0.0, max_val: float = 100.0) -> float:
     return max(min_val, min(value, max_val))

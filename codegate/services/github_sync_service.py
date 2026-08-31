@@ -1,11 +1,13 @@
-from typing import Tuple, Dict, Any, Optional
+from typing import Any, Dict, Optional, Tuple
+
 from sqlalchemy.orm import Session
 
-from pr_agent.git_providers import get_git_provider_with_context
 from codegate.database.models.pull_request import PullRequest
 from codegate.database.models.repository import Repository
-from codegate.services.repository_service import RepositoryService
 from codegate.services.pr_service import PullRequestService
+from codegate.services.repository_service import RepositoryService
+from pr_agent.git_providers import get_git_provider_with_context
+
 
 class GithubSyncService:
     """

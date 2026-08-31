@@ -1,12 +1,12 @@
-import os
 import json
 import logging
-from typing import Dict, Any, Tuple, Optional
-from codegate.engines.testing.schemas import ExecutionStatus, TestOutcome
+import os
+from typing import Any, Dict, Optional, Tuple
+
+from codegate.engines.testing.coverage_parser import CoverageParser
 from codegate.engines.testing.executor import TestExecutor
 from codegate.engines.testing.junit_parser import JUnitParser
-from codegate.engines.testing.coverage_parser import CoverageParser
-from codegate.engines.testing.schemas import JUnitMetrics, CoverageMetrics
+from codegate.engines.testing.schemas import CoverageMetrics, ExecutionStatus, JUnitMetrics, TestOutcome
 
 logger = logging.getLogger(__name__)
 

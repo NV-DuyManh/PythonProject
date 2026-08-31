@@ -1,9 +1,11 @@
 from typing import Optional
-from sqlalchemy import select, desc
+
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
 from codegate.database.models import RiskScore
 from codegate.repositories.base_store import BaseStore
+
 
 class RiskScoreStore(BaseStore[RiskScore]):
     def __init__(self):

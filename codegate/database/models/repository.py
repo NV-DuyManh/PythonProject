@@ -1,12 +1,14 @@
 from enum import Enum
-from typing import Optional, List, TYPE_CHECKING
+from typing import TYPE_CHECKING, List, Optional
 
 if TYPE_CHECKING:
-    from codegate.database.models.pull_request import PullRequest
     from codegate.database.models.policy import QualityPolicy
-from sqlalchemy import String, Boolean, UniqueConstraint, ForeignKey
+    from codegate.database.models.pull_request import PullRequest
+from sqlalchemy import Boolean, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+
 from codegate.database.base import Base, TimestampMixin
+
 
 class Provider(str, Enum):
     GITHUB = "GITHUB"

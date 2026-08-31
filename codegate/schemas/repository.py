@@ -1,7 +1,10 @@
-from pydantic import BaseModel, HttpUrl, ConfigDict
-from typing import Optional
 from datetime import datetime
+from typing import Optional
+
+from pydantic import BaseModel, ConfigDict, HttpUrl
+
 from codegate.database.models import Provider
+
 
 class RepositoryBase(BaseModel):
     provider: Provider

@@ -3,9 +3,9 @@ import logging
 import os
 from typing import List, Optional
 
+from codegate.database.models.analysis import Severity, Source, Status
 from codegate.engines.analyzers.base import BaseAnalyzer
 from codegate.engines.analyzers.schemas import AnalyzerResult, NormalizedFinding
-from codegate.database.models.analysis import Source, Severity, Status
 
 logger = logging.getLogger(__name__)
 

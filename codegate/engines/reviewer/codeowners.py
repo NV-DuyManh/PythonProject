@@ -1,6 +1,7 @@
 import os
 import re
-from typing import List, Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
+
 
 class CodeownersParser:
     @staticmethod

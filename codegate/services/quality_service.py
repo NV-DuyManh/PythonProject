@@ -1,13 +1,14 @@
 import logging
 from typing import Optional
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 
-from codegate.repositories.analysis_store import analysis_store
-from codegate.repositories.quality_store import quality_store
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
+from codegate.engines.quality.config import CALCULATION_VERSION
 from codegate.engines.quality.engine import QualityScoreEngine
 from codegate.engines.quality.explanation import build_breakdown_json
-from codegate.engines.quality.config import CALCULATION_VERSION
+from codegate.repositories.analysis_store import analysis_store
+from codegate.repositories.quality_store import quality_store
 from codegate.schemas.quality import QualityScoreResponse
 
 logger = logging.getLogger(__name__)
@@ -27,8 +28,8 @@ class QualityScoreService:
             # Testing Component Fetching
             testing_score = None
             try:
-                from codegate.repositories.testing_store import TestingStore
                 from codegate.engines.testing.schemas import ExecutionStatus, TestOutcome
+                from codegate.repositories.testing_store import TestingStore
                 testing_store = TestingStore()
                 test_run = testing_store.get_test_run(db, analysis_run_id)
                 if test_run and test_run.execution_status == ExecutionStatus.COMPLETED.value:

@@ -1,7 +1,10 @@
-from pydantic import BaseModel, ConfigDict
-from typing import Optional, Any
 from datetime import datetime
+from typing import Any, Optional
+
+from pydantic import BaseModel, ConfigDict
+
 from codegate.database.models import Status, Trigger
+
 
 class AnalysisRunBase(BaseModel):
     head_sha: str

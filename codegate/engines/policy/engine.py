@@ -1,16 +1,18 @@
-from typing import Optional, List, Any
-from codegate.database.models.analysis import QualityScore, RiskScore, Finding
-from codegate.engines.policy.schemas import PolicyConfig, PolicyEvaluationResult, PolicyDecision
+from typing import Any, List, Optional
+
+from codegate.database.models.analysis import Finding, QualityScore, RiskScore
 from codegate.engines.policy.rules import (
+    evaluate_max_critical_findings,
+    evaluate_max_high_security_findings,
+    evaluate_max_risk_score,
+    evaluate_min_quality_score,
     evaluate_quality_availability,
     evaluate_quality_completeness,
-    evaluate_min_quality_score,
     evaluate_risk_availability,
     evaluate_risk_completeness,
-    evaluate_max_risk_score,
-    evaluate_max_critical_findings,
-    evaluate_max_high_security_findings
 )
+from codegate.engines.policy.schemas import PolicyConfig, PolicyDecision, PolicyEvaluationResult
+
 
 class QualityPolicyEngine:
     @staticmethod
@@ -43,7 +45,7 @@ class QualityPolicyEngine:
         rules_results.append(evaluate_max_high_security_findings(config, findings))
         
         # 4. Testing
-        from codegate.engines.policy.rules import evaluate_test_result, evaluate_changed_code_coverage
+        from codegate.engines.policy.rules import evaluate_changed_code_coverage, evaluate_test_result
         res = evaluate_test_result(config, test_run)
         if res: rules_results.append(res)
         res = evaluate_changed_code_coverage(config, coverage_report)

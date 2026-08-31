@@ -1,7 +1,9 @@
 from typing import Optional, Protocol
-from codegate.engines.policy.schemas import PolicyEvaluationResult, PolicyDecision
+
+from codegate.engines.policy.schemas import PolicyDecision, PolicyEvaluationResult
 from pr_agent.git_providers.github_provider import GithubProvider
 from pr_agent.log import get_logger
+
 
 class PolicyCheckPublisher(Protocol):
     def publish(self, result: PolicyEvaluationResult, summary: str, text: str) -> Optional[int]:

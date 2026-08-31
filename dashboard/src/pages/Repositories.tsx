@@ -2,7 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CodeGateAPI } from '../api/client';
 import type { RepositoryDashboardItem } from '../types';
-import { GitBranch, RefreshCw, AlertTriangle } from 'lucide-react';
+import { GitBranch, RefreshCw } from 'lucide-react';
+import { EmptyState } from '../components/ui/EmptyState';
+import { ErrorState } from '../components/ui/ErrorState';
+import { formatPercentage, formatScore, formatDate } from '../lib/utils';
+import { Badge } from '../components/ui/Badge';
 
 export function Repositories() {
   const [data, setData] = useState<RepositoryDashboardItem[]>([]);
@@ -31,13 +35,8 @@ export function Repositories() {
 
   if (error) {
     return (
-      <div className="error-state">
-        <AlertTriangle className="error-state__icon" />
-        <div className="error-state__title">Unable to load data</div>
-        <div className="error-state__desc">{error}</div>
-        <button className="btn-primary" onClick={load}>
-          <RefreshCw size={14} /> Retry
-        </button>
+      <div className="p-8">
+        <ErrorState onRetry={load} description={error} />
       </div>
     );
   }
@@ -59,12 +58,12 @@ export function Repositories() {
       </div>
 
       {data.length === 0 ? (
-        <div className="empty-state">
-          <GitBranch size={56} strokeWidth={1.2} className="empty-state__icon" />
-          <div className="empty-state__title">No repositories connected</div>
-          <div className="empty-state__desc">
-            Repositories will appear here once CodeGate has analyzed pull requests from them.
-          </div>
+        <div className="p-8">
+          <EmptyState
+            icon={GitBranch}
+            title="No repositories connected"
+            description="Repositories will appear here once CodeGate has analyzed pull requests from them."
+          />
         </div>
       ) : (
         <div className="table-wrapper">
@@ -85,38 +84,32 @@ export function Repositories() {
               {data.map((repo) => (
                 <tr key={repo.repository_id}>
                   <td>
-                    <Link to={`/repositories/${repo.repository_id}`} className="cell-link">
+                    <Link to={`/repositories/${repo.repository_id}`} className="cell-link font-medium">
                       {repo.name}
                     </Link>
                   </td>
                   <td>
-                    <span className="badge badge--indigo">{repo.provider}</span>
+                    <Badge variant="indigo">{repo.provider}</Badge>
                   </td>
-                  <td>{repo.open_pr_count}</td>
+                  <td>{repo.open_pr_count ?? 0}</td>
                   <td>
                     {repo.average_quality !== null
-                      ? <span style={{ fontWeight: 700, color: repo.average_quality >= 80 ? 'var(--cg-green)' : repo.average_quality >= 60 ? 'var(--cg-amber)' : 'var(--cg-red)' }}>{repo.average_quality.toFixed(1)}</span>
+                      ? <span className="font-medium" style={{ color: repo.average_quality >= 80 ? 'var(--cg-green)' : repo.average_quality >= 60 ? 'var(--cg-amber)' : 'var(--cg-red)' }}>{formatScore(repo.average_quality)}</span>
                       : <span className="cell-muted">—</span>}
                   </td>
                   <td>
                     {repo.average_risk !== null
-                      ? <span style={{ fontWeight: 700, color: repo.average_risk >= 75 ? 'var(--cg-red)' : repo.average_risk >= 50 ? 'var(--cg-amber)' : 'var(--cg-green)' }}>{repo.average_risk.toFixed(1)}</span>
+                      ? <span className="font-medium" style={{ color: repo.average_risk >= 75 ? 'var(--cg-red)' : repo.average_risk >= 50 ? 'var(--cg-amber)' : 'var(--cg-green)' }}>{formatScore(repo.average_risk)}</span>
                       : <span className="cell-muted">—</span>}
                   </td>
                   <td>
-                    {repo.block_rate !== null
-                      ? `${repo.block_rate.toFixed(1)}%`
-                      : <span className="cell-muted">—</span>}
+                    {formatPercentage(repo.block_rate)}
                   </td>
                   <td>
-                    {repo.test_pass_rate !== null
-                      ? `${repo.test_pass_rate.toFixed(1)}%`
-                      : <span className="cell-muted">—</span>}
+                    {formatPercentage(repo.test_pass_rate)}
                   </td>
-                  <td className="cell-muted">
-                    {repo.last_analysis_at
-                      ? new Date(repo.last_analysis_at).toLocaleDateString()
-                      : 'Never'}
+                  <td className="cell-muted whitespace-nowrap">
+                    {repo.last_analysis_at ? formatDate(repo.last_analysis_at) : 'Never'}
                   </td>
                 </tr>
               ))}

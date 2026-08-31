@@ -1,5 +1,7 @@
 from typing import List, Optional
+
 from pydantic import BaseModel
+
 
 class Reason(BaseModel):
     finding_id: Optional[int]

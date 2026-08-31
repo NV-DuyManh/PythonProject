@@ -1,5 +1,6 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useState, useEffect } from 'react';
+import { CodeGateAPI } from '../api/client';
 import {
   LayoutDashboard,
   GitBranch,
@@ -11,16 +12,23 @@ import {
   Settings,
   Database
 } from 'lucide-react';
+import { Badge } from '../components/ui/Badge';
 
 export function AppLayout() {
   const location = useLocation();
   const [sysStatus, setSysStatus] = useState<any>(null);
+  const [apiError, setApiError] = useState(false);
 
   useEffect(() => {
-    fetch('/api/v1/system/status')
-      .then(r => r.json())
-      .then(setSysStatus)
-      .catch(console.error);
+    CodeGateAPI.getSystemStatus()
+      .then(data => {
+        setSysStatus(data);
+        setApiError(false);
+      })
+      .catch((e) => {
+        console.error(e);
+        setApiError(true);
+      });
   }, []);
 
   const navSections = [
@@ -54,6 +62,21 @@ export function AppLayout() {
   const isActive = (href: string) =>
     location.pathname === href || location.pathname.startsWith(`${href}/`);
 
+  const apiStatusStr = apiError ? 'OFFLINE' : (sysStatus?.status === 'healthy' ? 'READY' : (sysStatus?.status || 'UNKNOWN'));
+  
+  // If API is offline, everything downstream is UNKNOWN
+  const dbStatusStr = apiError ? 'UNKNOWN' : (sysStatus?.database?.status?.toUpperCase() || 'UNKNOWN');
+  const ghStatusStr = apiError ? 'UNKNOWN' : (sysStatus?.github?.status?.toUpperCase() || 'UNKNOWN');
+
+  const getStatusColor = (status: string) => {
+    if (status === 'HEALTHY' || status === 'CONNECTED' || status === 'READY') return 'var(--cg-success)';
+    if (status === 'OFFLINE' || status === 'ERROR' || status === 'DISCONNECTED') return 'var(--cg-danger)';
+    return 'var(--cg-warning)';
+  };
+
+  const isDemo = sysStatus?.data_mode === 'DEMO';
+  const isLive = sysStatus?.github?.status?.toUpperCase() === 'CONNECTED' && !isDemo;
+
   return (
     <div className="app-layout">
       {/* Sidebar */}
@@ -72,21 +95,21 @@ export function AppLayout() {
           <div className="sidebar__status-title">System Status</div>
 
           <div className="sidebar__status-row">
-            <span className="sidebar__status-dot" style={{ background: sysStatus?.system?.status === 'HEALTHY' ? 'var(--cg-success)' : 'var(--cg-warning)' }} />
+            <span className="sidebar__status-dot" style={{ background: getStatusColor(apiStatusStr) }} />
             <Server size={13} strokeWidth={1.8} />
-            <span>API {sysStatus?.system?.status === 'HEALTHY' ? 'Connected' : 'Offline'}</span>
+            <span className="capitalize">API {apiStatusStr.toLowerCase()}</span>
           </div>
 
           <div className="sidebar__status-row">
-            <span className="sidebar__status-dot" style={{ background: sysStatus?.database?.status === 'CONNECTED' ? 'var(--cg-success)' : 'var(--cg-warning)' }} />
+            <span className="sidebar__status-dot" style={{ background: getStatusColor(dbStatusStr) }} />
             <Database size={13} strokeWidth={1.8} />
-            <span>DB {sysStatus?.database?.status === 'CONNECTED' ? 'Connected' : 'Offline'}</span>
+            <span className="capitalize">DB {dbStatusStr.toLowerCase()}</span>
           </div>
 
           <div className="sidebar__status-row">
-            <span className="sidebar__status-dot" style={{ background: sysStatus?.github?.status === 'CONNECTED' ? 'var(--cg-success)' : 'var(--cg-danger)' }} />
+            <span className="sidebar__status-dot" style={{ background: getStatusColor(ghStatusStr) }} />
             <Zap size={13} strokeWidth={1.8} />
-            <span>GitHub {sysStatus?.github?.status === 'CONNECTED' ? 'Connected' : 'Disconnected'}</span>
+            <span className="capitalize">GitHub {ghStatusStr.toLowerCase()}</span>
           </div>
         </div>
 
@@ -113,10 +136,36 @@ export function AppLayout() {
         </div>
       </aside>
 
-      {/* Content */}
-      <main className="content">
-        <Outlet />
-      </main>
+      {/* Content Area */}
+      <div className="flex flex-col flex-1 h-screen overflow-hidden">
+        {/* Global Header */}
+        <header className="h-14 border-b border-border bg-background flex items-center justify-between px-8 shrink-0 z-10 shadow-sm">
+          <div className="text-sm font-medium text-muted">
+            {location.pathname.split('/')[1]?.toUpperCase() || 'DASHBOARD'}
+          </div>
+          <div className="flex items-center gap-4">
+            {isDemo && (
+              <Badge variant="warning" className="px-3 py-1 font-bold">
+                DEMO DATA
+              </Badge>
+            )}
+            {isLive && (
+              <Badge variant="success" className="px-3 py-1 font-bold">
+                LIVE GITHUB
+              </Badge>
+            )}
+            {!isDemo && !isLive && (
+              <Badge variant="default" className="px-3 py-1 font-bold">
+                DATA: UNKNOWN
+              </Badge>
+            )}
+          </div>
+        </header>
+        
+        <main className="content overflow-y-auto">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

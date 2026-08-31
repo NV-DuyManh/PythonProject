@@ -1,7 +1,8 @@
 import os
 import subprocess
 from datetime import datetime, timezone
-from typing import List, Dict, Optional, Any, Set
+from typing import Any, Dict, List, Optional, Set
+
 
 class GitHistoryAnalyzer:
     @staticmethod

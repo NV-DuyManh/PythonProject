@@ -1,9 +1,11 @@
+from typing import Any, Dict
+
 from fastapi import APIRouter, Depends
+from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
-from sqlalchemy import text, select, func
-from codegate.database.session import get_db
+
 from codegate.database.models import GitHubConnection, Repository
-from typing import Dict, Any
+from codegate.database.session import get_db
 
 router = APIRouter(prefix="/system", tags=["System"])
 
@@ -12,8 +14,10 @@ def get_system_status(db: Session = Depends(get_db)) -> Dict[str, Any]:
     try:
         db.execute(text("SELECT 1")).scalar()
         db_status = "connected"
+        engine_name = db.get_bind().dialect.name
     except Exception:
         db_status = "disconnected"
+        engine_name = "unknown"
         
     # Check GitHub connection
     gh_conn = db.execute(select(GitHubConnection).where(GitHubConnection.status == "active")).scalars().first()
@@ -30,7 +34,8 @@ def get_system_status(db: Session = Depends(get_db)) -> Dict[str, Any]:
     return {
         "status": "healthy",
         "database": {
-            "status": db_status
+            "status": db_status,
+            "engine": engine_name
         },
         "data_mode": "DEMO",
         "github": {

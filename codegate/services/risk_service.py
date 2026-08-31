@@ -1,12 +1,13 @@
 import logging
 from typing import Optional
-from sqlalchemy.orm import Session
-from fastapi import HTTPException, status
 
-from codegate.repositories.analysis_store import analysis_store
-from codegate.repositories.risk_store import risk_store
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+
 from codegate.engines.risk.engine import RiskScoreEngine
 from codegate.engines.risk.explanation import build_risk_breakdown
+from codegate.repositories.analysis_store import analysis_store
+from codegate.repositories.risk_store import risk_store
 from codegate.schemas.risk import RiskScoreResponse
 
 logger = logging.getLogger(__name__)

@@ -1,8 +1,11 @@
-from typing import List, Dict, Optional
-from sqlalchemy.orm import Session
+from typing import Dict, List, Optional
+
 from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from codegate.database.models import User
 from codegate.engines.reviewer.schemas import ReviewerIdentityInfo
+
 
 class IdentityResolver:
     @staticmethod

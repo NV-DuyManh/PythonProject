@@ -7,10 +7,10 @@ Create Date: 2026-08-30 15:17:02.846774
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
-import codegate.database.models.analysis
+from alembic import op
 
+import codegate.database.models.analysis
 
 # revision identifiers, used by Alembic.
 revision: str = 'c37885098272'

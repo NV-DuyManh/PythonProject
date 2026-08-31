@@ -1,8 +1,11 @@
-from typing import Optional, List, Any
-from sqlalchemy import select, desc
+from typing import Any, List, Optional
+
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
+
 from codegate.database.models import AnalysisRun
 from codegate.repositories.base_store import BaseStore
+
 
 class AnalysisStore(BaseStore[AnalysisRun]):
     def __init__(self):

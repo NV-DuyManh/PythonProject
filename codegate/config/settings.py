@@ -1,5 +1,7 @@
 import os
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class CodeGateSettings(BaseSettings):
     # Default to sqlite for local dev and testing

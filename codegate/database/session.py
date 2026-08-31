@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+
 from codegate.config.settings import settings
 
 engine = create_engine(

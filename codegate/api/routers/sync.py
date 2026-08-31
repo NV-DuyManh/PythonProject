@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from pydantic import BaseModel
 import logging
 
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
 from codegate.api.dependencies import get_db
-from codegate.services.github_sync_service import GithubSyncService
 from codegate.schemas.pull_request import PullRequestResponse
+from codegate.services.github_sync_service import GithubSyncService
 
 logger = logging.getLogger(__name__)
 

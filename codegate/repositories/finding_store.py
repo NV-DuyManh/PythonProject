@@ -1,8 +1,11 @@
-from typing import List, Any
+from typing import Any, List
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
 from codegate.database.models import Finding
 from codegate.repositories.base_store import BaseStore
+
 
 class FindingStore(BaseStore[Finding]):
     def __init__(self):

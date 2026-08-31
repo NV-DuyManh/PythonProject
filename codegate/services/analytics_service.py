@@ -1,19 +1,32 @@
 from datetime import datetime
 from typing import Optional
+
+from sqlalchemy import and_, case, func, select
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func, and_, case
 
 from codegate.database.models import (
-    Repository, PullRequest, AnalysisRun, 
-    QualityScore, RiskScore, PolicyEvaluation, 
-    TestRun, CoverageReport, Finding, Status
-)
-from codegate.schemas.analytics import (
-    AnalyticsFilter, QualityAnalytics, RiskAnalytics,
-    PolicyAnalytics, FindingsAnalytics, TestingAnalytics,
-    ReviewerAnalytics
+    AnalysisRun,
+    CoverageReport,
+    Finding,
+    PolicyEvaluation,
+    PullRequest,
+    QualityScore,
+    Repository,
+    RiskScore,
+    Status,
+    TestRun,
 )
 from codegate.repositories.analytics_store import analytics_store
+from codegate.schemas.analytics import (
+    AnalyticsFilter,
+    FindingsAnalytics,
+    PolicyAnalytics,
+    QualityAnalytics,
+    ReviewerAnalytics,
+    RiskAnalytics,
+    TestingAnalytics,
+)
+
 
 class AnalyticsService:
     def get_quality_analytics(

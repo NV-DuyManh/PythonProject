@@ -3,10 +3,10 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Optional
 
 if TYPE_CHECKING:
-    from codegate.database.models.repository import Repository
     from codegate.database.models.analysis import AnalysisRun
+    from codegate.database.models.repository import Repository
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, UniqueConstraint, Float
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from codegate.database.base import Base, TimestampMixin

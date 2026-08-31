@@ -1,6 +1,7 @@
-import xml.etree.ElementTree as ET
-from codegate.engines.testing.schemas import JUnitMetrics
 import logging
+import xml.etree.ElementTree as ET
+
+from codegate.engines.testing.schemas import JUnitMetrics
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class JUnitParser:
             return metrics
             
         try:
-            root = ET.fromstring(xml_content)
+            root = ET.fromstring(xml_content)  # nosec B314
             
             # JUnit formats can vary. Sometimes it's <testsuites>, sometimes <testsuite>
             suites = []

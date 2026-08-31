@@ -1,12 +1,14 @@
 from typing import Optional
+
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
+
 from codegate.api.dependencies import get_db
-from codegate.api.pagination import get_pagination_params, PaginationParams, paginate
-from codegate.schemas.pagination import PaginatedResponse
-from codegate.schemas.pull_request import PullRequestCreate, PullRequestUpdate, PullRequestResponse
-from codegate.services.pr_service import pr_service
+from codegate.api.pagination import PaginationParams, get_pagination_params, paginate
 from codegate.database.models import State
+from codegate.schemas.pagination import PaginatedResponse
+from codegate.schemas.pull_request import PullRequestCreate, PullRequestResponse, PullRequestUpdate
+from codegate.services.pr_service import pr_service
 
 router = APIRouter(tags=["Pull Requests"])
 

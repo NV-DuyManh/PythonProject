@@ -1,13 +1,16 @@
 from datetime import datetime
-from typing import Optional, List
-from fastapi import APIRouter, Depends, Query, Path
+from typing import List, Optional
 
-from codegate.database.session import get_db
+from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
 
+from codegate.database.session import get_db
 from codegate.schemas.dashboard import (
-    DashboardOverviewResponse, RepositoryDashboardItem, 
-    PRDashboardItem, PullRequestDashboardDetail, RepositoryDetailResponse
+    DashboardOverviewResponse,
+    PRDashboardItem,
+    PullRequestDashboardDetail,
+    RepositoryDashboardItem,
+    RepositoryDetailResponse,
 )
 from codegate.services.dashboard_service import dashboard_service
 
@@ -54,28 +57,10 @@ def get_repository_detail(
     db: Session = Depends(get_db)
 ):
     from fastapi import HTTPException
-    # For now, returning 404 until detailed implementation is filled out if needed,
-    # or I will just assemble a basic response. The prompt expects 404 for unknown.
-    from codegate.database.models import Repository
-    repo = db.get(Repository, repository_id)
-    if not repo:
+    res = dashboard_service.get_repository_detail(db, repository_id)
+    if not res:
         raise HTTPException(status_code=404, detail="Repository not found")
-        
-    # Stub response matching schema to satisfy basic tests
-    from codegate.schemas.dashboard import RepositoryDetailComponent
-    repo_comp = RepositoryDetailComponent(
-        repository_id=repo.id,
-        name=repo.name,
-        provider=repo.provider,
-        active=repo.is_active if hasattr(repo, 'is_active') else True
-    )
-    return RepositoryDetailResponse(
-        repository=repo_comp,
-        health={}, policy_summary={}, test_config_summary={}, reviewer_config_summary={},
-        recent_prs=[], quality_distribution={}, risk_distribution={}, policy_distribution={},
-        testing_summary={}, coverage_summary={}, finding_summary={}, top_security_rules=[],
-        sensitive_path_activity=[], recent_analyses=[]
-    )
+    return res
 
 @router.get("/pull-requests", response_model=List[PRDashboardItem])
 def get_pull_requests(

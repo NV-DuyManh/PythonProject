@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { CodeGateAPI } from '../api/client';
 import type { PullRequestDashboardDetail } from '../types';
@@ -6,13 +6,14 @@ import {
   ShieldCheck,
   ShieldAlert,
   ShieldX,
-  AlertTriangle,
-  RefreshCw,
   CheckCircle,
   FileCheck,
   Bug,
   Users,
 } from 'lucide-react';
+import { ErrorState } from '../components/ui/ErrorState';
+import { Badge } from '../components/ui/Badge';
+import { formatPercentage, formatScore } from '../lib/utils';
 
 export function PullRequestDetail() {
   const { pullRequestId } = useParams<{ pullRequestId: string }>();
@@ -20,7 +21,7 @@ export function PullRequestDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = () => {
+  const load = useCallback(() => {
     if (!pullRequestId) return;
     setLoading(true);
     setError(null);
@@ -28,9 +29,9 @@ export function PullRequestDetail() {
       .then(setData)
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  };
+  }, [pullRequestId]);
 
-  useEffect(() => { load(); }, [pullRequestId]);
+  useEffect(() => { load(); }, [load]);
 
   if (loading) {
     return (
@@ -46,13 +47,12 @@ export function PullRequestDetail() {
 
   if (error || !data) {
     return (
-      <div className="error-state">
-        <AlertTriangle className="error-state__icon" />
-        <div className="error-state__title">Unable to load pull request</div>
-        <div className="error-state__desc">{error || 'Pull request not found'}</div>
-        <button className="btn-primary" onClick={load}>
-          <RefreshCw size={14} /> Retry
-        </button>
+      <div className="p-8">
+        <ErrorState 
+          title="Unable to load pull request" 
+          description={error || 'Pull request not found'} 
+          onRetry={load} 
+        />
       </div>
     );
   }
@@ -82,16 +82,28 @@ export function PullRequestDetail() {
           <div className="stat-card__icon"><ShieldCheck size={26} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Quality</div>
-            <div className="stat-card__value">{quality?.overall_score ?? '—'}</div>
-            <div className="stat-card__note">{quality?.grade || 'N/A'}</div>
+            <div className="stat-card__value">{formatScore(quality?.overall_score)}</div>
+            <div className="stat-card__note">
+              {quality?.grade ? (
+                <Badge variant={quality.grade === 'A' || quality.grade === 'B' ? 'success' : quality.grade === 'C' ? 'warning' : 'danger'}>
+                  Grade {quality.grade}
+                </Badge>
+              ) : 'N/A'}
+            </div>
           </div>
         </div>
         <div className="stat-card stat-card--amber">
-          <div className="stat-card__icon"><AlertTriangle size={26} strokeWidth={1.8} /></div>
+          <div className="stat-card__icon"><ShieldAlert size={26} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Risk</div>
-            <div className="stat-card__value">{risk?.overall_score ?? '—'}</div>
-            <div className="stat-card__note">{risk?.level || 'N/A'}</div>
+            <div className="stat-card__value">{formatScore(risk?.overall_score)}</div>
+            <div className="stat-card__note">
+              {risk?.level ? (
+                <Badge variant={risk.level === 'LOW' ? 'success' : risk.level === 'MEDIUM' ? 'warning' : 'danger'}>
+                  {risk.level} Risk
+                </Badge>
+              ) : 'N/A'}
+            </div>
           </div>
         </div>
         <div className={`stat-card stat-card--${decisionVariant === 'block' ? 'red' : decisionVariant === 'warning' ? 'amber' : 'indigo'}`}>
@@ -110,7 +122,7 @@ export function PullRequestDetail() {
           <div className="stat-card__body">
             <div className="stat-card__label">Tests</div>
             <div className="stat-card__value" style={{ fontSize: '24px' }}>
-              {tests ? `${tests.passed_tests}/${tests.total_tests}` : '—'}
+              {tests ? `${tests.passed_tests ?? 0}/${tests.total_tests ?? 0}` : '—'}
             </div>
             <div className="stat-card__note">
               {tests?.failed_tests === 0 ? 'All passed' : tests ? `${tests.failed_tests} failed` : 'No tests'}
@@ -122,7 +134,7 @@ export function PullRequestDetail() {
           <div className="stat-card__body">
             <div className="stat-card__label">Changed Coverage</div>
             <div className="stat-card__value" style={{ fontSize: '24px' }}>
-              {coverage?.changed_coverage != null ? `${coverage.changed_coverage.toFixed(1)}%` : '—'}
+              {formatPercentage(coverage?.changed_coverage)}
             </div>
           </div>
         </div>
@@ -225,10 +237,10 @@ export function PullRequestDetail() {
           <div className="dashboard-panel__body">
             {tests ? (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div className="metric-block"><div className="metric-block__label">Total</div><div className="metric-block__value">{tests.total_tests}</div></div>
-                <div className="metric-block metric-block--green"><div className="metric-block__label">Passed</div><div className="metric-block__value">{tests.passed_tests}</div></div>
-                <div className="metric-block metric-block--red"><div className="metric-block__label">Failed</div><div className="metric-block__value">{tests.failed_tests}</div></div>
-                <div className="metric-block"><div className="metric-block__label">Skipped</div><div className="metric-block__value">{tests.skipped_tests || 0}</div></div>
+                <div className="metric-block"><div className="metric-block__label">Total</div><div className="metric-block__value">{tests.total_tests ?? 0}</div></div>
+                <div className="metric-block metric-block--green"><div className="metric-block__label">Passed</div><div className="metric-block__value">{tests.passed_tests ?? 0}</div></div>
+                <div className="metric-block metric-block--red"><div className="metric-block__label">Failed</div><div className="metric-block__value">{tests.failed_tests ?? 0}</div></div>
+                <div className="metric-block"><div className="metric-block__label">Skipped</div><div className="metric-block__value">{tests.skipped_tests ?? 0}</div></div>
               </div>
             ) : (
               <div style={{ textAlign: 'center', color: 'var(--cg-muted)', padding: '24px', fontSize: '13px' }}>
@@ -247,13 +259,13 @@ export function PullRequestDetail() {
                 <div className="metric-block metric-block--blue">
                   <div className="metric-block__label">Overall Coverage</div>
                   <div className="metric-block__value">
-                    {coverage.overall_coverage != null ? `${coverage.overall_coverage.toFixed(1)}%` : '—'}
+                    {formatPercentage(coverage.overall_coverage)}
                   </div>
                 </div>
                 <div className="metric-block metric-block--indigo">
                   <div className="metric-block__label">Changed-Code Coverage</div>
                   <div className="metric-block__value">
-                    {coverage.changed_coverage != null ? `${coverage.changed_coverage.toFixed(1)}%` : '—'}
+                    {formatPercentage(coverage.changed_coverage)}
                   </div>
                 </div>
               </>
@@ -292,12 +304,12 @@ export function PullRequestDetail() {
                   {findings.map((f: any, idx: number) => (
                     <tr key={idx}>
                       <td>
-                        <span className={`badge ${f.severity === 'CRITICAL' || f.severity === 'HIGH' ? 'badge--red' : f.severity === 'MEDIUM' ? 'badge--amber' : 'badge--gray'}`}>
+                        <Badge variant={f.severity === 'CRITICAL' || f.severity === 'HIGH' ? 'danger' : f.severity === 'MEDIUM' ? 'warning' : 'default'}>
                           {f.severity}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="cell-primary">{f.title}</td>
-                      <td><span className="badge badge--indigo">{f.category}</span></td>
+                      <td className="cell-primary font-medium">{f.title}</td>
+                      <td><Badge variant="indigo">{f.category}</Badge></td>
                       <td className="cell-muted" style={{ fontFamily: 'monospace', fontSize: '12px' }}>{f.file_path}</td>
                       <td className="cell-muted">{f.line_number}</td>
                     </tr>
@@ -307,7 +319,7 @@ export function PullRequestDetail() {
             </div>
           ) : (
             <div style={{ textAlign: 'center', padding: '32px', color: 'var(--cg-muted)', fontSize: '13px' }}>
-              <ShieldCheck size={32} strokeWidth={1.2} style={{ marginBottom: '8px', opacity: 0.4 }} />
+              <ShieldCheck size={32} strokeWidth={1.2} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
               <div>No issues found in this pull request.</div>
             </div>
           )}
@@ -336,7 +348,7 @@ export function PullRequestDetail() {
                   </div>
                 </div>
                 <div className="reviewer-card__score">
-                  {r.match_score?.toFixed(1)} match
+                  {formatScore(r.match_score)} match
                 </div>
               </div>
             ))

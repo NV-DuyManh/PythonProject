@@ -1,12 +1,15 @@
-from typing import Optional, List, Tuple
-from sqlalchemy.orm import Session
+from typing import List, Optional, Tuple
+
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select, func
-from codegate.repositories.repo_store import repo_store
+from sqlalchemy.orm import Session
+
+from codegate.api.exceptions import ConflictException, NotFoundException
+from codegate.database.models import Provider, PullRequest, State
 from codegate.repositories.pr_store import pr_store
-from codegate.database.models import Provider, State, PullRequest
+from codegate.repositories.repo_store import repo_store
 from codegate.schemas.pull_request import PullRequestCreate, PullRequestUpdate
-from codegate.api.exceptions import NotFoundException, ConflictException
+
 
 class PullRequestService:
     def create(self, db: Session, repository_id: int, pr_in: PullRequestCreate) -> PullRequest:

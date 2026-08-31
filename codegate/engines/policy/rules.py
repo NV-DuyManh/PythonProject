@@ -1,7 +1,9 @@
-from typing import Optional, List, Any
-from codegate.database.models.analysis import QualityScore, RiskScore, Finding, Severity, Source
-from codegate.engines.policy.schemas import PolicyConfig, RuleResult, PolicyDecision
+from typing import Any, List, Optional
+
+from codegate.database.models.analysis import Finding, QualityScore, RiskScore, Severity, Source
 from codegate.engines.policy.config import *
+from codegate.engines.policy.schemas import PolicyConfig, PolicyDecision, RuleResult
+
 
 def evaluate_quality_availability(config: PolicyConfig, score: Optional[QualityScore]) -> RuleResult:
     if score is not None:

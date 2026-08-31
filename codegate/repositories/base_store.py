@@ -1,6 +1,8 @@
-from typing import Generic, TypeVar, Type, Optional, List, Any
-from sqlalchemy.orm import Session
+from typing import Any, Generic, List, Optional, Type, TypeVar
+
 from sqlalchemy import select
+from sqlalchemy.orm import Session
+
 from codegate.database.base import Base
 
 ModelType = TypeVar("ModelType", bound=Base)

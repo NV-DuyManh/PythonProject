@@ -1,8 +1,9 @@
-from typing import Optional, List
-from sqlalchemy import select, desc
+from typing import List, Optional
+
+from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from codegate.database.models.policy import QualityPolicy, PolicyEvaluation
+from codegate.database.models.policy import PolicyEvaluation, QualityPolicy
 from codegate.repositories.base_store import BaseStore
 
 

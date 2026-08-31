@@ -1,6 +1,9 @@
-from typing import List, Optional, Any, Dict
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
-from codegate.database.models.analysis import Source, Severity, Status
+
+from codegate.database.models.analysis import Severity, Source, Status
+
 
 class NormalizedFinding(BaseModel):
     analyzer: Source

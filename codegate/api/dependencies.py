@@ -1,8 +1,11 @@
 from typing import Generator
+
 from fastapi import Depends
 from sqlalchemy.orm import Session
-from codegate.database.session import SessionLocal
+
 from codegate.database.models import User
+from codegate.database.session import SessionLocal
+
 
 def get_db() -> Generator[Session, None, None]:
     """Dependency to get a database session."""

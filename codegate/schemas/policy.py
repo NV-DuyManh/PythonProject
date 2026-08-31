@@ -1,7 +1,10 @@
-from pydantic import BaseModel, Field
-from typing import Optional, Any
 from datetime import datetime
+from typing import Any, Optional
+
+from pydantic import BaseModel, Field
+
 from codegate.engines.policy.schemas import PolicyConfig
+
 
 class QualityPolicyResponse(BaseModel):
     id: int

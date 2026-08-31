@@ -41,3 +41,9 @@ codegate.db
 # Launcher runtime
 .runtime/
 .env
+
+# Additional Secrets and DBs
+*.pem
+*.sqlite
+*.sqlite3
+**/.secrets.toml

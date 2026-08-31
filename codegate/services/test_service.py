@@ -2,18 +2,19 @@ import logging
 import os
 import shutil
 import tempfile
-from typing import Optional, Dict, Any, Tuple
-from sqlalchemy.orm import Session
 from datetime import datetime
+from typing import Any, Dict, Optional, Tuple
+
+from sqlalchemy.orm import Session
 
 from codegate.database.models import AnalysisRun, Repository
-from codegate.database.models.testing import TestConfiguration, TestRun, CoverageReport
-from codegate.repositories.testing_store import TestingStore
-from codegate.engines.testing.schemas import ExecutionStatus, TestOutcome, JUnitMetrics, CoverageMetrics
-from codegate.engines.testing.executor import DisabledExecutor, LocalTrustedExecutor, DockerTestExecutor
-from codegate.engines.testing.pytest_runner import PytestRunner
+from codegate.database.models.testing import CoverageReport, TestConfiguration, TestRun
 from codegate.engines.testing.changed_lines import ChangedLinesResolver
+from codegate.engines.testing.executor import DisabledExecutor, DockerTestExecutor, LocalTrustedExecutor
+from codegate.engines.testing.pytest_runner import PytestRunner
+from codegate.engines.testing.schemas import CoverageMetrics, ExecutionStatus, JUnitMetrics, TestOutcome
 from codegate.repositories.analysis_store import AnalysisStore
+from codegate.repositories.testing_store import TestingStore
 
 logger = logging.getLogger(__name__)
 

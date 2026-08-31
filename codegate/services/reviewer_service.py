@@ -1,13 +1,16 @@
 import json
-from typing import List, Dict, Optional, Any
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy.orm import Session
-from codegate.database.models import TeamMember, User, AnalysisRun, Repository, PullRequest, PullRequestFile
+
+from codegate.database.models import AnalysisRun, PullRequest, PullRequestFile, Repository, TeamMember, User
 from codegate.engines.reviewer.config import ReviewerEngineConfig
-from codegate.engines.reviewer.schemas import ReviewerRecommendationResult
 from codegate.engines.reviewer.engine import ReviewerRecommendationEngine
-from codegate.repositories.reviewer_store import reviewer_config_store, reviewer_recommendation_store
-from codegate.repositories.repo_store import repo_store
+from codegate.engines.reviewer.schemas import ReviewerRecommendationResult
 from codegate.repositories.analysis_store import analysis_store
+from codegate.repositories.repo_store import repo_store
+from codegate.repositories.reviewer_store import reviewer_config_store, reviewer_recommendation_store
+
 
 class ReviewerRecommendationService:
     def get_config(self, db: Session, repository_id: int) -> dict:

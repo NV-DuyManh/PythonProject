@@ -3,7 +3,6 @@ import { CodeGateAPI } from '../api/client';
 import type { DashboardOverviewResponse } from '../types';
 import {
   RefreshCw,
-  AlertTriangle,
   ShieldCheck,
   ShieldX,
   CheckCircle,
@@ -11,6 +10,8 @@ import {
   Bug,
   Users,
 } from 'lucide-react';
+import { ErrorState } from '../components/ui/ErrorState';
+import { formatPercentage, formatScore } from '../lib/utils';
 
 export function Analytics() {
   const [data, setData] = useState<DashboardOverviewResponse | null>(null);
@@ -45,13 +46,8 @@ export function Analytics() {
 
   if (error) {
     return (
-      <div className="error-state">
-        <AlertTriangle className="error-state__icon" />
-        <div className="error-state__title">Unable to load analytics</div>
-        <div className="error-state__desc">{error}</div>
-        <button className="btn-primary" onClick={load}>
-          <RefreshCw size={14} /> Retry
-        </button>
+      <div className="p-8">
+        <ErrorState onRetry={load} description={error} title="Unable to load analytics" />
       </div>
     );
   }
@@ -99,28 +95,28 @@ export function Analytics() {
           <div className="stat-card__icon"><ShieldCheck size={28} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Avg Quality</div>
-            <div className="stat-card__value">{d.average_quality_score !== null ? d.average_quality_score.toFixed(1) : '—'}</div>
+            <div className="stat-card__value">{formatScore(d.average_quality_score)}</div>
           </div>
         </div>
         <div className="stat-card stat-card--amber">
-          <div className="stat-card__icon"><AlertTriangle size={28} strokeWidth={1.8} /></div>
+          <div className="stat-card__icon"><ShieldX size={28} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Avg Risk</div>
-            <div className="stat-card__value">{d.average_risk_score !== null ? d.average_risk_score.toFixed(1) : '—'}</div>
+            <div className="stat-card__value">{formatScore(d.average_risk_score)}</div>
           </div>
         </div>
         <div className="stat-card stat-card--indigo">
           <div className="stat-card__icon"><CheckCircle size={28} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Pass Rate</div>
-            <div className="stat-card__value">{d.policy_pass_rate !== null ? `${d.policy_pass_rate.toFixed(1)}%` : '—'}</div>
+            <div className="stat-card__value">{formatPercentage(d.policy_pass_rate)}</div>
           </div>
         </div>
         <div className="stat-card stat-card--blue">
           <div className="stat-card__icon"><FileCheck size={28} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Changed Coverage</div>
-            <div className="stat-card__value">{d.average_changed_line_coverage !== null ? `${d.average_changed_line_coverage.toFixed(1)}%` : '—'}</div>
+            <div className="stat-card__value">{formatPercentage(d.average_changed_line_coverage)}</div>
           </div>
         </div>
       </div>
@@ -135,11 +131,11 @@ export function Analytics() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div className="metric-block metric-block--green">
                 <div className="metric-block__label">Avg Score</div>
-                <div className="metric-block__value">{d.average_quality_score !== null ? d.average_quality_score.toFixed(1) : '—'}</div>
+                <div className="metric-block__value">{formatScore(d.average_quality_score)}</div>
               </div>
               <div className="metric-block metric-block--indigo">
                 <div className="metric-block__label">Total Analyses</div>
-                <div className="metric-block__value">{d.analyses_completed}</div>
+                <div className="metric-block__value">{d.analyses_completed ?? 0}</div>
               </div>
             </div>
           </div>
@@ -152,11 +148,11 @@ export function Analytics() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
               <div className="metric-block metric-block--amber">
                 <div className="metric-block__label">Avg Risk</div>
-                <div className="metric-block__value">{d.average_risk_score !== null ? d.average_risk_score.toFixed(1) : '—'}</div>
+                <div className="metric-block__value">{formatScore(d.average_risk_score)}</div>
               </div>
               <div className="metric-block metric-block--red">
                 <div className="metric-block__label">Block Rate</div>
-                <div className="metric-block__value">{d.policy_block_rate !== null ? `${d.policy_block_rate.toFixed(1)}%` : '—'}</div>
+                <div className="metric-block__value">{formatPercentage(d.policy_block_rate)}</div>
               </div>
             </div>
           </div>
@@ -172,15 +168,15 @@ export function Analytics() {
           <div className="dashboard-panel__body">
             <div className="metric-block metric-block--green">
               <div className="metric-block__label">PASS</div>
-              <div className="metric-block__value">{d.policy_pass_count}</div>
+              <div className="metric-block__value">{d.policy_pass_count ?? 0}</div>
             </div>
             <div className="metric-block metric-block--amber">
               <div className="metric-block__label">WARNING</div>
-              <div className="metric-block__value">{d.policy_warning_count}</div>
+              <div className="metric-block__value">{d.policy_warning_count ?? 0}</div>
             </div>
             <div className="metric-block metric-block--red">
               <div className="metric-block__label">BLOCK</div>
-              <div className="metric-block__value">{d.policy_block_count}</div>
+              <div className="metric-block__value">{d.policy_block_count ?? 0}</div>
             </div>
           </div>
         </div>
@@ -191,11 +187,11 @@ export function Analytics() {
           <div className="dashboard-panel__body">
             <div className="metric-block metric-block--green">
               <div className="metric-block__label">Test Pass Rate</div>
-              <div className="metric-block__value">{d.test_pass_rate !== null ? `${d.test_pass_rate.toFixed(1)}%` : '—'}</div>
+              <div className="metric-block__value">{formatPercentage(d.test_pass_rate)}</div>
             </div>
             <div className="metric-block metric-block--blue">
               <div className="metric-block__label">Changed Coverage</div>
-              <div className="metric-block__value">{d.average_changed_line_coverage !== null ? `${d.average_changed_line_coverage.toFixed(1)}%` : '—'}</div>
+              <div className="metric-block__value">{formatPercentage(d.average_changed_line_coverage)}</div>
             </div>
           </div>
         </div>
@@ -211,16 +207,16 @@ export function Analytics() {
               <div className="alert-card__body">
                 <h4>Critical Findings</h4>
               </div>
-              <div className="alert-card__value" style={{ color: 'var(--cg-red)' }}>{d.critical_findings}</div>
+              <div className="alert-card__value" style={{ color: 'var(--cg-red)' }}>{d.critical_findings ?? 0}</div>
             </div>
             <div className="alert-card alert-card--amber">
               <div className="alert-card__icon alert-card__icon--amber">
-                <AlertTriangle size={18} strokeWidth={1.8} />
+                <ShieldX size={18} strokeWidth={1.8} />
               </div>
               <div className="alert-card__body">
                 <h4>High Findings</h4>
               </div>
-              <div className="alert-card__value" style={{ color: 'var(--cg-amber)' }}>{d.high_findings}</div>
+              <div className="alert-card__value" style={{ color: 'var(--cg-amber)' }}>{d.high_findings ?? 0}</div>
             </div>
           </div>
         </div>
@@ -238,7 +234,7 @@ export function Analytics() {
           <div className="dashboard-panel__body">
             <div className="metric-block metric-block--indigo">
               <div className="metric-block__label">Generated Recommendations</div>
-              <div className="metric-block__value">{d.reviewer_recommendations_generated}</div>
+              <div className="metric-block__value">{d.reviewer_recommendations_generated ?? 0}</div>
               <div className="metric-block__note">AI-powered reviewer matches</div>
             </div>
           </div>
@@ -253,11 +249,11 @@ export function Analytics() {
           <div className="dashboard-panel__body">
             <div className="metric-block metric-block--red">
               <div className="metric-block__label">Blocked PRs</div>
-              <div className="metric-block__value">{d.policy_block_count}</div>
+              <div className="metric-block__value">{d.policy_block_count ?? 0}</div>
             </div>
             <div className="metric-block metric-block--green">
               <div className="metric-block__label">Healthy PRs</div>
-              <div className="metric-block__value">{d.policy_pass_count}</div>
+              <div className="metric-block__value">{d.policy_pass_count ?? 0}</div>
             </div>
           </div>
         </div>

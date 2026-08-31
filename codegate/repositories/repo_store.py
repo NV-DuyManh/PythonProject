@@ -1,8 +1,11 @@
 from typing import Optional
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+
 from codegate.database.models import Repository
 from codegate.repositories.base_store import BaseStore
+
 
 class RepositoryStore(BaseStore[Repository]):
     def __init__(self):
