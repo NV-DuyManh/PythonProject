@@ -70,7 +70,7 @@ export function AppLayout() {
 
         <div className="sidebar__status">
           <div className="sidebar__status-title">System Status</div>
-          
+
           <div className="sidebar__status-row">
             <span className="sidebar__status-dot" style={{ background: sysStatus?.system?.status === 'HEALTHY' ? 'var(--cg-success)' : 'var(--cg-warning)' }} />
             <Server size={13} strokeWidth={1.8} />

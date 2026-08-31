@@ -14,7 +14,12 @@ try:
 except ImportError:
     requests = None
 
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if getattr(sys, 'frozen', False):
+    # Running in a PyInstaller bundle
+    PROJECT_ROOT = os.path.dirname(sys.executable)
+else:
+    # Running in normal Python environment
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
 class CodeGateLauncher(tk.Tk):
     def __init__(self, auto_start=False):
