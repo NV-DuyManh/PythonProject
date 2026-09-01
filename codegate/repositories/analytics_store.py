@@ -28,20 +28,26 @@ class AnalyticsStore:
             stmt = stmt.where(date_column <= to_date)
         return stmt
 
-    def get_overview_kpis(self, db: Session, repository_id: Optional[int] = None, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None):
+    def get_overview_kpis(self, db: Session, repository_id: Optional[int] = None, from_date: Optional[datetime] = None, to_date: Optional[datetime] = None, workspace_id: Optional[int] = None):
         # 1. Total Repos
         repo_stmt = select(func.count(Repository.id))
+        if workspace_id:
+            repo_stmt = repo_stmt.where(Repository.workspace_id == workspace_id)
         if repository_id:
             repo_stmt = repo_stmt.where(Repository.id == repository_id)
         repositories_total = db.scalar(repo_stmt) or 0
 
         # 2. PR counts
         pr_stmt = select(func.count(PullRequest.id)).where(func.lower(PullRequest.state) == "open")
+        if workspace_id:
+            pr_stmt = pr_stmt.join(Repository).where(Repository.workspace_id == workspace_id)
         if repository_id:
             pr_stmt = pr_stmt.where(PullRequest.repository_id == repository_id)
         open_pull_requests = db.scalar(pr_stmt) or 0
         
         pr_total_stmt = select(func.count(PullRequest.id))
+        if workspace_id:
+            pr_total_stmt = pr_total_stmt.join(Repository).where(Repository.workspace_id == workspace_id)
         if repository_id:
             pr_total_stmt = pr_total_stmt.where(PullRequest.repository_id == repository_id)
         pr_total_stmt = self._apply_date_filter(pr_total_stmt, from_date, to_date, PullRequest.created_at)
@@ -56,21 +62,33 @@ class AnalyticsStore:
         
         # Base query for all analyses (historical trends)
         ar_base = select(AnalysisRun.id)
-        if repository_id:
-            ar_base = ar_base.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+        if workspace_id or repository_id:
+            ar_base = ar_base.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
+            if workspace_id:
+                ar_base = ar_base.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
+            if repository_id:
+                ar_base = ar_base.where(PullRequest.repository_id == repository_id)
         ar_base = self._apply_date_filter(ar_base, from_date, to_date, AnalysisRun.created_at)
         ar_subq = ar_base.subquery()
         analyses_total = db.scalar(select(func.count(ar_subq.c.id))) or 0
         
         comp_stmt = select(func.count(AnalysisRun.id)).where(AnalysisRun.status == Status.COMPLETED)
-        if repository_id:
-            comp_stmt = comp_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+        if workspace_id or repository_id:
+            comp_stmt = comp_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
+            if workspace_id:
+                comp_stmt = comp_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
+            if repository_id:
+                comp_stmt = comp_stmt.where(PullRequest.repository_id == repository_id)
         comp_stmt = self._apply_date_filter(comp_stmt, from_date, to_date, AnalysisRun.created_at)
         analyses_completed = db.scalar(comp_stmt) or 0
         
         fail_stmt = select(func.count(AnalysisRun.id)).where(AnalysisRun.status == Status.FAILED)
-        if repository_id:
-            fail_stmt = fail_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+        if workspace_id or repository_id:
+            fail_stmt = fail_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
+            if workspace_id:
+                fail_stmt = fail_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
+            if repository_id:
+                fail_stmt = fail_stmt.where(PullRequest.repository_id == repository_id)
         fail_stmt = self._apply_date_filter(fail_stmt, from_date, to_date, AnalysisRun.created_at)
         analyses_failed = db.scalar(fail_stmt) or 0
 
@@ -85,8 +103,12 @@ class AnalyticsStore:
                     AnalysisRun.created_at == latest_ar_subq.c.max_created_at
                 )
             )
-            if repository_id:
-                stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            if workspace_id or repository_id:
+                stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
+                if workspace_id:
+                    stmt = stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
+                if repository_id:
+                    stmt = stmt.where(PullRequest.repository_id == repository_id)
             stmt = self._apply_date_filter(stmt, from_date, to_date, AnalysisRun.created_at)
             return stmt
 
@@ -153,8 +175,12 @@ class AnalyticsStore:
                 AnalysisRun.created_at == latest_ar_subq.c.max_created_at
             )
         )
-        if repository_id:
-            c_stmt = c_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+        if workspace_id or repository_id:
+            c_stmt = c_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
+            if workspace_id:
+                c_stmt = c_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
+            if repository_id:
+                c_stmt = c_stmt.where(PullRequest.repository_id == repository_id)
         c_stmt = self._apply_date_filter(c_stmt, from_date, to_date, AnalysisRun.created_at)
         c_res = db.execute(c_stmt).fetchone()
         avg_cov, avg_changed_cov = c_res if c_res else (None, None)
@@ -185,8 +211,12 @@ class AnalyticsStore:
         ).join(QualityScore, QualityScore.analysis_run_id == AnalysisRun.id, isouter=True) \
          .join(RiskScore, RiskScore.analysis_run_id == AnalysisRun.id, isouter=True)
          
-        if repository_id:
-            trend_stmt = trend_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+        if workspace_id or repository_id:
+            trend_stmt = trend_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
+            if workspace_id:
+                trend_stmt = trend_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
+            if repository_id:
+                trend_stmt = trend_stmt.where(PullRequest.repository_id == repository_id)
         trend_stmt = self._apply_date_filter(trend_stmt, from_date, to_date, AnalysisRun.created_at)
         trend_stmt = trend_stmt.group_by(func.date(AnalysisRun.created_at)).order_by(func.date(AnalysisRun.created_at))
         
@@ -207,8 +237,12 @@ class AnalyticsStore:
         ).join(TestRun, TestRun.analysis_run_id == AnalysisRun.id) \
          .join(CoverageReport, CoverageReport.test_run_id == TestRun.id)
         
-        if repository_id:
-            cov_trend_stmt = cov_trend_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+        if workspace_id or repository_id:
+            cov_trend_stmt = cov_trend_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
+            if workspace_id:
+                cov_trend_stmt = cov_trend_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
+            if repository_id:
+                cov_trend_stmt = cov_trend_stmt.where(PullRequest.repository_id == repository_id)
         cov_trend_stmt = self._apply_date_filter(cov_trend_stmt, from_date, to_date, AnalysisRun.created_at)
         cov_trend_stmt = cov_trend_stmt.group_by(func.date(AnalysisRun.created_at)).order_by(func.date(AnalysisRun.created_at))
         
@@ -226,8 +260,12 @@ class AnalyticsStore:
             func.sum(case((PolicyEvaluation.decision == PolicyDecision.BLOCK, 1), else_=0))
         ).join(PolicyEvaluation, PolicyEvaluation.analysis_run_id == AnalysisRun.id)
         
-        if repository_id:
-            pol_trend_stmt = pol_trend_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+        if workspace_id or repository_id:
+            pol_trend_stmt = pol_trend_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
+            if workspace_id:
+                pol_trend_stmt = pol_trend_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
+            if repository_id:
+                pol_trend_stmt = pol_trend_stmt.where(PullRequest.repository_id == repository_id)
         pol_trend_stmt = self._apply_date_filter(pol_trend_stmt, from_date, to_date, AnalysisRun.created_at)
         pol_trend_stmt = pol_trend_stmt.group_by(func.date(AnalysisRun.created_at)).order_by(func.date(AnalysisRun.created_at))
         

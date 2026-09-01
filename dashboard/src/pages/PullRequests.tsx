@@ -5,10 +5,13 @@ import type { PRDashboardItem } from '../types';
 import { GitPullRequest, RefreshCw, Search } from 'lucide-react';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorState } from '../components/ui/ErrorState';
+import { Skeleton } from '../components/ui/Skeleton';
 import { formatPercentage, formatDate } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
+import { useAuth } from '../contexts/AuthContext';
 
 export function PullRequests() {
+  const { workspaceVersion } = useAuth();
   const [data, setData] = useState<PRDashboardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,7 +26,7 @@ export function PullRequests() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [workspaceVersion]);
 
   const filtered = data.filter((pr) => {
     if (!search) return true;
@@ -35,9 +38,10 @@ export function PullRequests() {
 
   if (loading) {
     return (
-      <div>
-        <div className="skeleton skeleton--hero" />
-        <div className="skeleton skeleton--table" />
+      <div className="flex flex-col gap-6">
+        <Skeleton className="w-full h-[140px] rounded-[22px]" />
+        <Skeleton className="w-full h-[88px] rounded-[22px]" />
+        <Skeleton className="w-full h-[400px] rounded-[16px]" />
       </div>
     );
   }
@@ -51,7 +55,7 @@ export function PullRequests() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col gap-6">
       {/* HERO */}
       <div className="page-hero">
         <div className="page-hero__content">
@@ -114,6 +118,7 @@ export function PullRequests() {
                 <th>Tests</th>
                 <th>Coverage</th>
                 <th>Findings</th>
+                <th>Analysis</th>
                 <th>Updated</th>
               </tr>
             </thead>
@@ -175,6 +180,20 @@ export function PullRequests() {
                       </Badge>
                     ) : (
                       <span className="cell-muted">0</span>
+                    )}
+                  </td>
+                  <td>
+                    {pr.analysis_status ? (
+                      <Badge variant={
+                        pr.analysis_status === 'COMPLETED' ? 'success' :
+                        pr.analysis_status === 'FAILED' ? 'danger' :
+                        pr.analysis_status === 'RUNNING' ? 'indigo' :
+                        pr.analysis_status === 'QUEUED' ? 'warning' : 'default'
+                      }>
+                        {pr.analysis_status}
+                      </Badge>
+                    ) : (
+                      <span className="cell-muted">—</span>
                     )}
                   </td>
                   <td className="cell-muted whitespace-nowrap">

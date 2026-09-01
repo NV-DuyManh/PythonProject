@@ -43,17 +43,23 @@ def test_repository_unique_constraint(db_session):
         owner="org",
         name="repo",
         full_name="org/repo",
-        url="https://github.com/org/repo"
+        url="https://github.com/org/repo",
+        workspace_id=1,
+        github_connection_id=1,
+        provider_repository_id="123"
     )
     db_session.add(repo1)
     db_session.commit()
-    
+
     repo2 = Repository(
         provider=Provider.GITHUB,
         owner="org2",
         name="repo",
-        full_name="org/repo",  # Duplicate full_name and provider
-        url="https://github.com/org2/repo"
+        full_name="org/repo2",
+        url="https://github.com/org2/repo",
+        workspace_id=1,
+        github_connection_id=1,
+        provider_repository_id="123"  # Duplicate
     )
     db_session.add(repo2)
     with pytest.raises(IntegrityError):

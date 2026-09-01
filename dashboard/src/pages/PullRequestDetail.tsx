@@ -10,16 +10,21 @@ import {
   FileCheck,
   Bug,
   Users,
+  RefreshCw,
 } from 'lucide-react';
 import { ErrorState } from '../components/ui/ErrorState';
+import { Skeleton } from '../components/ui/Skeleton';
 import { Badge } from '../components/ui/Badge';
 import { formatPercentage, formatScore } from '../lib/utils';
+import { useAuth } from '../contexts/AuthContext';
 
 export function PullRequestDetail() {
+  const { workspaceVersion } = useAuth();
   const { pullRequestId } = useParams<{ pullRequestId: string }>();
   const [data, setData] = useState<PullRequestDashboardDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState(false);
 
   const load = useCallback(() => {
     if (!pullRequestId) return;
@@ -31,16 +36,16 @@ export function PullRequestDetail() {
       .finally(() => setLoading(false));
   }, [pullRequestId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, workspaceVersion]);
 
   if (loading) {
     return (
-      <div>
-        <div className="skeleton skeleton--hero" />
+      <div className="flex flex-col gap-6">
+        <Skeleton className="w-full h-[140px] rounded-[22px]" />
         <div className="dashboard-grid dashboard-grid--5">
-          {[...Array(5)].map((_, i) => <div key={i} className="skeleton skeleton--stat" />)}
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="w-full h-[120px] rounded-[22px]" />)}
         </div>
-        <div className="skeleton skeleton--panel" />
+        <Skeleton className="w-full h-[200px] rounded-[22px]" />
       </div>
     );
   }
@@ -57,12 +62,27 @@ export function PullRequestDetail() {
     );
   }
 
-  const { pr, quality, risk, policy, tests, coverage, findings, reviewer_recommendation: reviewers } = data;
+  const { pr, analysis, quality, risk, policy, tests, coverage, findings, reviewer_recommendation: reviewers } = data;
   const policyDecision = policy?.decision?.toUpperCase() || 'UNKNOWN';
   const decisionVariant = policyDecision === 'BLOCK' ? 'block' : policyDecision === 'WARNING' ? 'warning' : 'pass';
 
+  const handleRetry = async () => {
+    if (!analysis?.id) return;
+    setRetrying(true);
+    try {
+      await CodeGateAPI.retryAnalysis(analysis.id);
+      load(); // Reload after enqueuing
+    } catch (err: any) {
+      alert(err.message || 'Failed to retry analysis');
+    } finally {
+      setRetrying(false);
+    }
+  };
+
+  const isTerminal = analysis?.status === 'FAILED' || analysis?.status === 'SKIPPED' || analysis?.status === 'COMPLETED';
+
   return (
-    <div>
+    <div className="flex flex-col gap-6">
       {/* HERO */}
       <div className="page-hero">
         <div className="page-hero__content">
@@ -72,7 +92,25 @@ export function PullRequestDetail() {
             {pr.repository} · {pr.author} · {pr.state}
             {pr.head_branch ? ` · ${pr.head_branch}` : ''}
             {pr.head_sha ? ` (${pr.head_sha.substring(0, 7)})` : ''}
+            {analysis && (
+              <span style={{ marginLeft: '12px' }}>
+                <Badge variant={
+                  analysis.status === 'COMPLETED' ? 'success' :
+                  analysis.status === 'FAILED' ? 'danger' :
+                  analysis.status === 'RUNNING' ? 'indigo' :
+                  analysis.status === 'QUEUED' ? 'warning' : 'default'
+                }>{analysis.status}</Badge>
+              </span>
+            )}
           </p>
+        </div>
+        <div className="page-hero__actions">
+          {analysis && isTerminal && (
+            <button className="btn-secondary" onClick={handleRetry} disabled={retrying}>
+              <RefreshCw size={15} strokeWidth={2} className={retrying ? "spin" : ""} /> 
+              {retrying ? 'Retrying...' : 'Retry Analysis'}
+            </button>
+          )}
         </div>
       </div>
 

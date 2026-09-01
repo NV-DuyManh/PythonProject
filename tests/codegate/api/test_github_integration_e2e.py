@@ -6,12 +6,7 @@ from codegate.api.main import app
 from codegate.database.session import get_db
 from codegate.database.models import GitHubConnection, Repository, Provider
 
-client = TestClient(app)
-
-def test_mocked_github_e2e(db_session: Session):
-    def override_get_db():
-        yield db_session
-    app.dependency_overrides[get_db] = override_get_db
+def test_mocked_github_e2e(db_session: Session, client: TestClient):
     """
     Simulates a full E2E flow:
     1. Connect Account A and B
@@ -20,8 +15,8 @@ def test_mocked_github_e2e(db_session: Session):
     4. Check Dashboard API scoping
     """
     # 1. Connect Accounts
-    conn_a = GitHubConnection(account_login="account_a", status="active")
-    conn_b = GitHubConnection(account_login="account_b", status="active")
+    conn_a = GitHubConnection(account_login="account_a", status="active", workspace_id=1)
+    conn_b = GitHubConnection(account_login="account_b", status="active", workspace_id=1)
     db_session.add_all([conn_a, conn_b])
     db_session.commit()
     
@@ -29,7 +24,7 @@ def test_mocked_github_e2e(db_session: Session):
     repo_a = Repository(
         provider=Provider.GITHUB, owner="account_a", name="repo1",
         full_name="account_a/repo1", url="https://github.com/account_a/repo1",
-        github_connection_id=conn_a.id, data_source="DEMO"
+        github_connection_id=conn_a.id, data_source="DEMO", workspace_id=1
     )
     db_session.add(repo_a)
     db_session.commit()
@@ -66,6 +61,7 @@ def test_mocked_github_e2e(db_session: Session):
     
     # 5. Verify Dashboard API picks it up
     response = client.get("/api/v1/dashboard/overview")
+    print("\nAPI RESPONSE:", response.json())
     assert response.status_code == 200
     data = response.json()
     

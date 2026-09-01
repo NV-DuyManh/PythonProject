@@ -28,11 +28,13 @@ from codegate.database.models.team import Role, Team, TeamMember
 from codegate.database.models.testing import CoverageReport, TestConfiguration, TestRun
 from codegate.database.models.user import User
 from codegate.database.models.webhook import WebhookEvent
+from codegate.database.models.auth import AuthSession
 
 __all__ = [
     "Base",
     "TimestampMixin",
     "User",
+    "AuthSession",
     "Team",
     "TeamMember",
     "Role",

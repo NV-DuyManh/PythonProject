@@ -14,10 +14,10 @@ from codegate.schemas.quality import QualityScoreResponse
 logger = logging.getLogger(__name__)
 
 class QualityScoreService:
-    def calculate_and_persist(self, db: Session, analysis_run_id: int) -> Optional[QualityScoreResponse]:
+    def calculate_and_persist(self, db: Session, analysis_run_id: int, workspace_id: int = None) -> Optional[QualityScoreResponse]:
         analysis_run = analysis_store.get_by_id(db, analysis_run_id)
-        if not analysis_run:
-            logger.error(f"Cannot calculate quality: AnalysisRun {analysis_run_id} not found")
+        if not analysis_run or (workspace_id and analysis_run.pull_request.repository.workspace_id != workspace_id):
+            logger.error(f"Cannot calculate quality: AnalysisRun {analysis_run_id} not found or unauthorized")
             return None
             
         try:
@@ -78,10 +78,10 @@ class QualityScoreService:
             logger.error(f"Failed to calculate quality score for analysis {analysis_run_id}: {e}", exc_info=True)
             return None
             
-    def get_quality(self, db: Session, analysis_run_id: int) -> QualityScoreResponse:
+    def get_quality(self, db: Session, analysis_run_id: int, workspace_id: int = None) -> QualityScoreResponse:
         # First verify analysis run exists
         analysis_run = analysis_store.get_by_id(db, analysis_run_id)
-        if not analysis_run:
+        if not analysis_run or (workspace_id and analysis_run.pull_request.repository.workspace_id != workspace_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found")
             
         qs = quality_store.get_latest_for_analysis(db, analysis_run_id)
@@ -90,13 +90,13 @@ class QualityScoreService:
             
         return self._format_response(qs)
         
-    def recalculate(self, db: Session, analysis_run_id: int) -> QualityScoreResponse:
+    def recalculate(self, db: Session, analysis_run_id: int, workspace_id: int = None) -> QualityScoreResponse:
         # Verify analysis run exists
         analysis_run = analysis_store.get_by_id(db, analysis_run_id)
-        if not analysis_run:
+        if not analysis_run or (workspace_id and analysis_run.pull_request.repository.workspace_id != workspace_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found")
             
-        resp = self.calculate_and_persist(db, analysis_run_id)
+        resp = self.calculate_and_persist(db, analysis_run_id, workspace_id)
         if not resp:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to recalculate quality score")
             

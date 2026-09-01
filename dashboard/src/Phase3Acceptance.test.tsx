@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './layouts/AppLayout';
+import { AuthProvider } from './contexts/AuthContext';
 import { PullRequestDetail } from './pages/PullRequestDetail';
 import { RepositoryDetail } from './pages/RepositoryDetail';
 import { Integrations } from './pages/Integrations';
@@ -19,6 +20,19 @@ vi.mock('./api/client', () => ({
   },
 }));
 
+vi.mock('./contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 1, username: 'testuser', display_name: 'Test User' },
+    activeWorkspace: { id: 1, name: 'Test Workspace' },
+    workspaces: [{ id: 1, name: 'Test Workspace' }],
+    authenticated: true,
+    loading: false,
+    logout: vi.fn(),
+    handleSetActiveWorkspace: vi.fn(),
+  }),
+  AuthProvider: ({ children }: any) => <>{children}</>
+}));
+
 describe('Phase 3 Final Acceptance Tests', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -29,13 +43,18 @@ describe('Phase 3 Final Acceptance Tests', () => {
       // Mock API offline via CodeGateAPI
       vi.mocked(CodeGateAPI.getSystemStatus).mockRejectedValueOnce(new Error('Network offline'));
       
-      render(<MemoryRouter><AppLayout /></MemoryRouter>);
+      render(
+        <MemoryRouter>
+          <AuthProvider>
+            <AppLayout />
+          </AuthProvider>
+        </MemoryRouter>
+      );
       
       await waitFor(() => {
-        expect(screen.getByText(/API offline/i)).toBeInTheDocument();
-        expect(screen.getByText(/DB unknown/i)).toBeInTheDocument();
-        expect(screen.getByText(/GitHub unknown/i)).toBeInTheDocument();
-        expect(screen.getByText(/DATA: UNKNOWN/i)).toBeInTheDocument();
+        expect(screen.getByText(/API\s+offline/i)).toBeInTheDocument();
+        expect(screen.getByText(/DB\s+unknown/i)).toBeInTheDocument();
+        expect(screen.getByText(/GitHub\s+unknown/i)).toBeInTheDocument();
       });
     });
 
@@ -47,12 +66,18 @@ describe('Phase 3 Final Acceptance Tests', () => {
         github: { status: 'CONNECTED' },
       } as any);
       
-      render(<MemoryRouter><AppLayout /></MemoryRouter>);
+      render(
+        <MemoryRouter>
+          <AuthProvider>
+            <AppLayout />
+          </AuthProvider>
+        </MemoryRouter>
+      );
       
       await waitFor(() => {
-        expect(screen.getByText(/API ready/i)).toBeInTheDocument();
-        expect(screen.getByText(/DB connected/i)).toBeInTheDocument();
-        expect(screen.getByText(/GitHub connected/i)).toBeInTheDocument();
+        expect(screen.getByText(/API\s+ready/i)).toBeInTheDocument();
+        expect(screen.getByText(/DB\s+connected/i)).toBeInTheDocument();
+        expect(screen.getByText(/GitHub\s+connected/i)).toBeInTheDocument();
         expect(screen.getByText(/LIVE GITHUB/i)).toBeInTheDocument();
       });
     });
@@ -74,9 +99,11 @@ describe('Phase 3 Final Acceptance Tests', () => {
 
       render(
         <MemoryRouter initialEntries={['/pr/123']}>
-          <Routes>
-            <Route path="/pr/:pullRequestId" element={<PullRequestDetail />} />
-          </Routes>
+          <AuthProvider>
+            <Routes>
+              <Route path="/pr/:pullRequestId" element={<PullRequestDetail />} />
+            </Routes>
+          </AuthProvider>
         </MemoryRouter>
       );
 

@@ -12,8 +12,10 @@ import {
 } from 'lucide-react';
 import { ErrorState } from '../components/ui/ErrorState';
 import { formatPercentage, formatScore } from '../lib/utils';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Analytics() {
+  const { workspaceVersion } = useAuth();
   const [data, setData] = useState<DashboardOverviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +29,7 @@ export function Analytics() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [workspaceVersion]);
 
   if (loading) {
     return (

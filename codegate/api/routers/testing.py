@@ -3,7 +3,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
-from codegate.api.dependencies import get_db
+from codegate.api.dependencies import get_current_workspace, get_db
+from codegate.database.models import Team
 from codegate.repositories.repo_store import repo_store
 from codegate.repositories.testing_store import TestingStore
 from codegate.schemas.testing import (
@@ -19,11 +20,12 @@ testing_store = TestingStore()
 @router.get("/repositories/{repository_id}/test-config", response_model=TestConfigurationResponse)
 def get_test_configuration(
     repository_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     """Get test runner configuration for a repository."""
-    repo = repo_store.get(db, id=repository_id)
-    if not repo:
+    repo = repo_store.get_by_id(db, repository_id)
+    if not repo or repo.workspace_id != workspace.id:
         raise HTTPException(status_code=404, detail="Repository not found")
         
     config = testing_store.get_test_configuration(db, repository_id)
@@ -38,11 +40,12 @@ def get_test_configuration(
 def update_test_configuration(
     repository_id: int,
     config_update: TestConfigurationUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     """Update test runner configuration."""
-    repo = repo_store.get(db, id=repository_id)
-    if not repo:
+    repo = repo_store.get_by_id(db, repository_id)
+    if not repo or repo.workspace_id != workspace.id:
         raise HTTPException(status_code=404, detail="Repository not found")
         
     update_data = config_update.model_dump(exclude_unset=True)
@@ -62,12 +65,13 @@ def update_test_configuration(
 @router.get("/analyses/{analysis_id}/tests", response_model=TestRunResponse)
 def get_test_run_for_analysis(
     analysis_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     """Get the test run results for a specific analysis run."""
     from codegate.repositories.analysis_store import analysis_store
-    run = analysis_store.get_run(db, analysis_id)
-    if not run:
+    run = analysis_store.get_by_id(db, analysis_id)
+    if not run or run.pull_request.repository.workspace_id != workspace.id:
         raise HTTPException(status_code=404, detail="Analysis run not found")
         
     test_run = testing_store.get_test_run(db, analysis_id)
@@ -79,12 +83,13 @@ def get_test_run_for_analysis(
 @router.get("/analyses/{analysis_id}/coverage", response_model=CoverageReportResponse)
 def get_coverage_for_analysis(
     analysis_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     """Get the coverage report for a specific analysis run."""
     from codegate.repositories.analysis_store import analysis_store
-    run = analysis_store.get_run(db, analysis_id)
-    if not run:
+    run = analysis_store.get_by_id(db, analysis_id)
+    if not run or run.pull_request.repository.workspace_id != workspace.id:
         raise HTTPException(status_code=404, detail="Analysis run not found")
         
     test_run = testing_store.get_test_run(db, analysis_id)
@@ -100,14 +105,15 @@ def get_coverage_for_analysis(
 @router.post("/analyses/{analysis_id}/tests/run", response_model=TestRunResponse)
 async def trigger_tests_for_analysis(
     analysis_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     """Manually trigger test execution for an analysis run."""
     from codegate.repositories.analysis_store import analysis_store
     from codegate.services.test_service import TestExecutionService
     
-    run = analysis_store.get_run(db, analysis_id)
-    if not run:
+    run = analysis_store.get_by_id(db, analysis_id)
+    if not run or run.pull_request.repository.workspace_id != workspace.id:
         raise HTTPException(status_code=404, detail="Analysis run not found")
         
     repo = run.pull_request.repository

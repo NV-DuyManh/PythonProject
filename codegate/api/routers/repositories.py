@@ -3,9 +3,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from codegate.api.dependencies import get_db
+from codegate.api.dependencies import get_current_workspace, get_db
 from codegate.api.pagination import PaginationParams, get_pagination_params, paginate
-from codegate.database.models import Provider
+from codegate.database.models import Provider, Team
 from codegate.repositories.policy_store import quality_policy_store
 from codegate.schemas.pagination import PaginatedResponse
 from codegate.schemas.policy import QualityPolicyResponse, QualityPolicyUpdate
@@ -17,9 +17,10 @@ router = APIRouter(prefix="/repositories", tags=["Repositories"])
 @router.post("", response_model=RepositoryResponse, status_code=status.HTTP_201_CREATED)
 def create_repository(
     repo_in: RepositoryCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
-    return repository_service.create(db, repo_in)
+    return repository_service.create(db, repo_in, workspace.id)
 
 @router.get("", response_model=PaginatedResponse[RepositoryResponse])
 def list_repositories(
@@ -27,42 +28,47 @@ def list_repositories(
     active: Optional[bool] = None,
     search: Optional[str] = None,
     pagination: PaginationParams = Depends(get_pagination_params),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     skip = (pagination.page - 1) * pagination.page_size
     items, total = repository_service.list(
-        db, provider=provider, active=active, search=search, skip=skip, limit=pagination.page_size
+        db, provider=provider, active=active, search=search, skip=skip, limit=pagination.page_size, workspace_id=workspace.id
     )
     return paginate(items, total, pagination)
 
 @router.get("/{repo_id}", response_model=RepositoryResponse)
 def get_repository(
     repo_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
-    return repository_service.get(db, repo_id)
+    return repository_service.get(db, repo_id, workspace.id)
 
 @router.patch("/{repo_id}", response_model=RepositoryResponse)
 def update_repository(
     repo_id: int,
     repo_in: RepositoryUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
-    return repository_service.update(db, repo_id, repo_in)
+    return repository_service.update(db, repo_id, repo_in, workspace.id)
 
 @router.delete("/{repo_id}", response_model=RepositoryResponse)
 def delete_repository(
     repo_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
-    return repository_service.delete(db, repo_id)
+    return repository_service.delete(db, repo_id, workspace.id)
 
 @router.get("/{repo_id}/policy", response_model=QualityPolicyResponse)
 def get_repository_policy(
     repo_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
-    repo = repository_service.get(db, repo_id)
+    repo = repository_service.get(db, repo_id, workspace.id)
     if not repo:
         raise HTTPException(status_code=404, detail="Repository not found")
         
@@ -75,9 +81,10 @@ def get_repository_policy(
 def update_repository_policy(
     repo_id: int,
     policy_in: QualityPolicyUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
-    repo = repository_service.get(db, repo_id)
+    repo = repository_service.get(db, repo_id, workspace.id)
     if not repo:
         raise HTTPException(status_code=404, detail="Repository not found")
         

@@ -10,10 +10,10 @@ from codegate.repositories.finding_store import finding_store
 
 
 class FindingService:
-    def list(self, db: Session, analysis_id: int, severity: Optional[Severity] = None, source: Optional[Source] = None, category: Optional[str] = None, skip: int = 0, limit: int = 20) -> Tuple[List[Finding], int]:
+    def list(self, db: Session, analysis_id: int, severity: Optional[Severity] = None, source: Optional[Source] = None, category: Optional[str] = None, skip: int = 0, limit: int = 20, workspace_id: int = None) -> Tuple[List[Finding], int]:
         # Validate analysis exists
         analysis = analysis_store.get_by_id(db, analysis_id)
-        if not analysis:
+        if not analysis or (workspace_id and analysis.pull_request.repository.workspace_id != workspace_id):
             raise NotFoundException("Analysis run not found")
             
         stmt = select(Finding).where(Finding.analysis_run_id == analysis_id)

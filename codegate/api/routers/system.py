@@ -5,7 +5,8 @@ from sqlalchemy import func, select, text
 from sqlalchemy.orm import Session
 
 from codegate.database.models import GitHubConnection, Repository
-from codegate.database.session import get_db
+from codegate.api.dependencies import get_db
+from codegate.worker.celery_app import celery_app
 
 router = APIRouter(prefix="/system", tags=["System"])
 
@@ -31,6 +32,23 @@ def get_system_status(db: Session = Depends(get_db)) -> Dict[str, Any]:
         account = None
         repo_count = 0
         
+    # Check Celery and Redis
+    try:
+        i = celery_app.control.inspect(timeout=1.0)
+        ping_res = i.ping()
+        if ping_res is None:
+            queue_status = "ONLINE"
+            worker_status = "OFFLINE"
+            connected_nodes = 0
+        else:
+            queue_status = "ONLINE"
+            worker_status = "ONLINE"
+            connected_nodes = len(ping_res)
+    except Exception:
+        queue_status = "OFFLINE"
+        worker_status = "OFFLINE"
+        connected_nodes = 0
+        
     return {
         "status": "healthy",
         "database": {
@@ -49,6 +67,13 @@ def get_system_status(db: Session = Depends(get_db)) -> Dict[str, Any]:
         },
         "webhook": {
             "status": "NOT_CONFIGURED"
+        },
+        "queue": {
+            "status": queue_status
+        },
+        "worker": {
+            "status": worker_status,
+            "connected_nodes": connected_nodes
         },
         "test_runner": {
             "status": "DISABLED"

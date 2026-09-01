@@ -13,10 +13,10 @@ from codegate.schemas.risk import RiskScoreResponse
 logger = logging.getLogger(__name__)
 
 class RiskScoreService:
-    def calculate_and_persist(self, db: Session, analysis_run_id: int) -> Optional[RiskScoreResponse]:
+    def calculate_and_persist(self, db: Session, analysis_run_id: int, workspace_id: int = None) -> Optional[RiskScoreResponse]:
         analysis_run = analysis_store.get_by_id(db, analysis_run_id)
-        if not analysis_run:
-            logger.error(f"Cannot calculate risk: AnalysisRun {analysis_run_id} not found")
+        if not analysis_run or (workspace_id and analysis_run.pull_request.repository.workspace_id != workspace_id):
+            logger.error(f"Cannot calculate risk: AnalysisRun {analysis_run_id} not found or unauthorized")
             return None
             
         try:
@@ -61,10 +61,10 @@ class RiskScoreService:
             logger.error(f"Failed to calculate risk score for analysis {analysis_run_id}: {e}", exc_info=True)
             return None
             
-    def get_risk(self, db: Session, analysis_run_id: int) -> RiskScoreResponse:
+    def get_risk(self, db: Session, analysis_run_id: int, workspace_id: int = None) -> RiskScoreResponse:
         # First verify analysis run exists
         analysis_run = analysis_store.get_by_id(db, analysis_run_id)
-        if not analysis_run:
+        if not analysis_run or (workspace_id and analysis_run.pull_request.repository.workspace_id != workspace_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found")
             
         rs = risk_store.get_latest_for_analysis(db, analysis_run_id)
@@ -73,13 +73,13 @@ class RiskScoreService:
             
         return self._format_response(rs)
         
-    def recalculate(self, db: Session, analysis_run_id: int) -> RiskScoreResponse:
+    def recalculate(self, db: Session, analysis_run_id: int, workspace_id: int = None) -> RiskScoreResponse:
         # Verify analysis run exists
         analysis_run = analysis_store.get_by_id(db, analysis_run_id)
-        if not analysis_run:
+        if not analysis_run or (workspace_id and analysis_run.pull_request.repository.workspace_id != workspace_id):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Analysis run not found")
             
-        resp = self.calculate_and_persist(db, analysis_run_id)
+        resp = self.calculate_and_persist(db, analysis_run_id, workspace_id)
         if not resp:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to recalculate risk score")
             

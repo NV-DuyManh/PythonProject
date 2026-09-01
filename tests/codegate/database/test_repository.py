@@ -14,14 +14,16 @@ def test_repository_unique_identity(db_session: Session):
         owner="alice",
         name="backend",
         full_name="alice/backend",
-        url="https://github.com/alice/backend"
+        url="https://github.com/alice/backend",
+        workspace_id=1
     )
     repo_bob = Repository(
         provider=Provider.GITHUB,
         owner="bob",
         name="backend",
         full_name="bob/backend",
-        url="https://github.com/bob/backend"
+        url="https://github.com/bob/backend",
+        workspace_id=1
     )
     
     db_session.add_all([repo_alice, repo_bob])
@@ -31,16 +33,21 @@ def test_repository_unique_identity(db_session: Session):
     assert repo_bob.id is not None
     assert repo_alice.id != repo_bob.id
     
-    # Try duplicate full_name
+    # Try duplicate connection_id and provider_repository_id
     repo_dup = Repository(
         provider=Provider.GITHUB,
         owner="alice",
         name="backend",
-        full_name="alice/backend",
-        url="https://github.com/alice/backend_2"
+        full_name="alice/backend_2",
+        url="https://github.com/alice/backend_2",
+        workspace_id=1,
+        github_connection_id=1,
+        provider_repository_id="12345"
     )
+    repo_alice.github_connection_id = 1
+    repo_alice.provider_repository_id = "12345"
     db_session.add(repo_dup)
-    
+
     with pytest.raises(IntegrityError):
         db_session.commit()
         

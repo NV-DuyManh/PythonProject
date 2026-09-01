@@ -13,13 +13,21 @@ from codegate.repositories.reviewer_store import reviewer_config_store, reviewer
 
 
 class ReviewerRecommendationService:
-    def get_config(self, db: Session, repository_id: int) -> dict:
+    def get_config(self, db: Session, repository_id: int, workspace_id: int = None) -> dict:
+        repo = repo_store.get(db, repository_id)
+        if not repo or (workspace_id and repo.workspace_id != workspace_id):
+            raise ValueError("Repository not found")
+            
         config = reviewer_config_store.get_by_repository(db, repository_id)
         if not config:
             config = reviewer_config_store.create_default(db, repository_id)
         return self._config_to_dict(config)
 
-    def update_config(self, db: Session, repository_id: int, updates: dict[str, Any]) -> dict:
+    def update_config(self, db: Session, repository_id: int, updates: dict[str, Any], workspace_id: int = None) -> dict:
+        repo = repo_store.get(db, repository_id)
+        if not repo or (workspace_id and repo.workspace_id != workspace_id):
+            raise ValueError("Repository not found")
+            
         config = reviewer_config_store.update_config(db, repository_id, updates)
         return self._config_to_dict(config)
 
@@ -45,7 +53,10 @@ class ReviewerRecommendationService:
         user_ids = list(db.scalars(stmt).all())
         return list(set(user_ids))
 
-    def evaluate_and_persist(self, db: Session, analysis_run: AnalysisRun, repo_path: str) -> Optional[dict]:
+    def evaluate_and_persist(self, db: Session, analysis_run: AnalysisRun, repo_path: str, workspace_id: int = None) -> Optional[dict]:
+        if workspace_id and analysis_run.pull_request.repository.workspace_id != workspace_id:
+            return None
+            
         repo_id = analysis_run.pull_request.repository_id
         db_config = reviewer_config_store.get_by_repository(db, repo_id)
         if not db_config:
@@ -119,7 +130,11 @@ class ReviewerRecommendationService:
         
         return self._format_response(rec)
 
-    def get_latest(self, db: Session, analysis_run_id: int) -> Optional[dict]:
+    def get_latest(self, db: Session, analysis_run_id: int, workspace_id: int = None) -> Optional[dict]:
+        analysis = analysis_store.get_by_id(db, analysis_run_id)
+        if not analysis or (workspace_id and analysis.pull_request.repository.workspace_id != workspace_id):
+            return None
+            
         rec = reviewer_recommendation_store.get_by_analysis(db, analysis_run_id)
         if not rec:
             return None

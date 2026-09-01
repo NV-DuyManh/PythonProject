@@ -24,6 +24,7 @@ def compile_json_type(type_, compiler, **kw):
 
 class Status(str, Enum):
     PENDING = "PENDING"
+    QUEUED = "QUEUED"
     RUNNING = "RUNNING"
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
@@ -114,6 +115,33 @@ class AnalysisRun(Base, TimestampMixin):
         back_populates="analysis_run",
         cascade="all, delete-orphan"
     )
+    job: Mapped["AnalysisJob"] = relationship(
+        "AnalysisJob",
+        uselist=False,
+        back_populates="analysis_run",
+        cascade="all, delete-orphan"
+    )
+
+class AnalysisJob(Base, TimestampMixin):
+    __tablename__ = "analysis_jobs"
+
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    analysis_run_id: Mapped[int] = mapped_column(
+        ForeignKey("analysis_runs.id", ondelete="CASCADE"), nullable=False, unique=True, index=True
+    )
+    
+    celery_task_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="QUEUED")
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    
+    queued_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    
+    last_error: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+    analysis_run: Mapped["AnalysisRun"] = relationship("AnalysisRun", back_populates="job")
+
 
 
 class Finding(Base):

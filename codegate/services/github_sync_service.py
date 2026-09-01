@@ -7,6 +7,12 @@ from codegate.database.models.repository import Repository
 from codegate.services.pr_service import PullRequestService
 from codegate.services.repository_service import RepositoryService
 from pr_agent.git_providers import get_git_provider_with_context
+from codegate.database.models.github import GitHubConnection
+from codegate.services.github_app import GitHubAppService
+from datetime import datetime, timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class GithubSyncService:
@@ -128,3 +134,119 @@ class GithubSyncService:
             self.db.refresh(pull_request)
 
         return repository, pull_request
+
+    async def sync_repositories(self, connection_id: int) -> Dict[str, int]:
+        """
+        Authoritative sync of repositories based on GitHub App installation payload.
+        """
+        connection = self.db.query(GitHubConnection).filter_by(id=connection_id).first()
+        if not connection or not connection.installation_id:
+            raise ValueError(f"GitHubConnection {connection_id} not found or missing installation_id")
+            
+        app_service = GitHubAppService()
+        
+        try:
+            token = await app_service.get_installation_access_token(connection.installation_id)
+            github_repos = await app_service.get_installation_repositories(token)
+            
+            summary = {
+                "discovered": len(github_repos),
+                "created": 0,
+                "updated": 0,
+                "unchanged": 0,
+                "removed_access": 0,
+                "failed": 0
+            }
+            
+            # Map of provider_repository_id -> github repo data
+            github_repo_map = {str(repo["id"]): repo for repo in github_repos}
+            
+            # Fetch existing repos for this connection
+            existing_repos = self.db.query(Repository).filter(
+                Repository.github_connection_id == connection.id
+            ).all()
+            
+            existing_repo_map = {repo.provider_repository_id: repo for repo in existing_repos if repo.provider_repository_id}
+            
+            now = datetime.now(timezone.utc)
+            
+            # Process GitHub repos (Create / Update)
+            for provider_repo_id, gh_repo in github_repo_map.items():
+                owner_login = gh_repo.get("owner", {}).get("login", "")
+                
+                if provider_repo_id in existing_repo_map:
+                    # Update
+                    repo = existing_repo_map[provider_repo_id]
+                    changed = False
+                    if repo.full_name != gh_repo["full_name"]:
+                        repo.full_name = gh_repo["full_name"]
+                        changed = True
+                    if repo.name != gh_repo["name"]:
+                        repo.name = gh_repo["name"]
+                        changed = True
+                    if repo.url != gh_repo["html_url"]:
+                        repo.url = gh_repo["html_url"]
+                        changed = True
+                    if repo.default_branch != gh_repo.get("default_branch", "main"):
+                        repo.default_branch = gh_repo.get("default_branch", "main")
+                        changed = True
+                    if repo.access_status != "ACTIVE":
+                        repo.access_status = "ACTIVE"
+                        changed = True
+                        
+                    repo.last_synced_at = now
+                    
+                    if changed:
+                        summary["updated"] += 1
+                    else:
+                        summary["unchanged"] += 1
+                else:
+                    # Create
+                    repo = Repository(
+                        provider="GITHUB",
+                        provider_repository_id=provider_repo_id,
+                        owner=owner_login,
+                        name=gh_repo["name"],
+                        full_name=gh_repo["full_name"],
+                        url=gh_repo["html_url"],
+                        default_branch=gh_repo.get("default_branch", "main"),
+                        active=True,
+                        access_status="ACTIVE",
+                        data_source="LIVE",
+                        github_connection_id=connection.id,
+                        workspace_id=connection.workspace_id,
+                        last_synced_at=now
+                    )
+                    self.db.add(repo)
+                    summary["created"] += 1
+                    
+            # Process existing repos not in GitHub payload (Remove Access)
+            for provider_repo_id, repo in existing_repo_map.items():
+                if provider_repo_id not in github_repo_map:
+                    if repo.access_status != "ACCESS_REMOVED":
+                        repo.access_status = "ACCESS_REMOVED"
+                        repo.last_synced_at = now
+                        summary["removed_access"] += 1
+                        
+            # Update connection status
+            connection.last_sync_status = "SUCCESS"
+            connection.last_sync_error = None
+            connection.last_synced_at = now
+            
+            self.db.commit()
+            return summary
+            
+        except Exception as e:
+            self.db.rollback()
+            logger.exception("Failed to sync repositories")
+            
+            # Record failure state
+            try:
+                connection.last_sync_status = "FAILED"
+                connection.last_sync_error = str(e)[:1000]
+                connection.last_synced_at = datetime.now(timezone.utc)
+                self.db.commit()
+            except Exception as inner_e:
+                logger.error(f"Failed to record sync failure: {inner_e}")
+                
+            raise e

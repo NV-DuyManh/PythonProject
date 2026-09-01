@@ -157,11 +157,16 @@ from datetime import datetime
 
 client = TestClient(app)
 
-def test_get_metrics_api(db_session):
-    from codegate.api.dependencies import get_db
-    app.dependency_overrides[get_db] = lambda: db_session
-    
-    repo = Repository(owner="test", name="test_repo", full_name="test/test_repo", provider="github", url="https://github.com/test/repo", active=True)
+def test_get_metrics_api(client, db_session):
+    from codegate.database.models import Team
+    # Ensure workspace exists
+    ws = db_session.get(Team, 1)
+    if not ws:
+        ws = Team(id=1, name="Test Workspace", description="Mock")
+        db_session.add(ws)
+        db_session.commit()
+
+    repo = Repository(owner="test", name="test_repo", full_name="test/test_repo", provider="github", url="https://github.com/test/repo", active=True, workspace_id=1)
     db_session.add(repo)
     db_session.commit()
 
@@ -186,3 +191,4 @@ def test_get_metrics_api(db_session):
     assert data["items"][0]["metric_name"] == "cyclomatic_complexity"
     assert data["items"][0]["file_path"] == "complex.py"
     assert data["items"][0]["value"] == "15"
+

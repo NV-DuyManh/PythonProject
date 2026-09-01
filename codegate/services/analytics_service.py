@@ -30,14 +30,18 @@ from codegate.schemas.analytics import (
 
 class AnalyticsService:
     def get_quality_analytics(
-        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime]
+        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime], workspace_id: Optional[int] = None
     ) -> QualityAnalytics:
         # Base query for Quality Scores
         stmt = select(func.avg(QualityScore.overall_score), func.count(QualityScore.id))
         stmt = stmt.join(AnalysisRun, AnalysisRun.id == QualityScore.analysis_run_id)
         
+        if repository_id or workspace_id:
+            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            stmt = stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            stmt = stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
             
         stmt = analytics_store._apply_date_filter(stmt, from_date, to_date, AnalysisRun.created_at)
         
@@ -46,8 +50,12 @@ class AnalyticsService:
         
         # Missing count = total completed analyses - total quality scores
         ar_stmt = select(func.count(AnalysisRun.id)).where(AnalysisRun.status == Status.COMPLETED)
+        if repository_id or workspace_id:
+            ar_stmt = ar_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            ar_stmt = ar_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            ar_stmt = ar_stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            ar_stmt = ar_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
         ar_stmt = analytics_store._apply_date_filter(ar_stmt, from_date, to_date, AnalysisRun.created_at)
         total_analyses = db.scalar(ar_stmt) or 0
         
@@ -58,8 +66,12 @@ class AnalyticsService:
         # Distribution
         dist_stmt = select(QualityScore.grade, func.count(QualityScore.id)).group_by(QualityScore.grade)
         dist_stmt = dist_stmt.join(AnalysisRun, AnalysisRun.id == QualityScore.analysis_run_id)
+        if repository_id or workspace_id:
+            dist_stmt = dist_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            dist_stmt = dist_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            dist_stmt = dist_stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            dist_stmt = dist_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
         dist_stmt = analytics_store._apply_date_filter(dist_stmt, from_date, to_date, AnalysisRun.created_at)
         
         dist_res = db.execute(dist_stmt).all()
@@ -73,13 +85,17 @@ class AnalyticsService:
         )
         
     def get_risk_analytics(
-        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime]
+        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime], workspace_id: Optional[int] = None
     ) -> RiskAnalytics:
         stmt = select(func.avg(RiskScore.overall_risk), func.count(RiskScore.id))
         stmt = stmt.join(AnalysisRun, AnalysisRun.id == RiskScore.analysis_run_id)
         
+        if repository_id or workspace_id:
+            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            stmt = stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            stmt = stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
             
         stmt = analytics_store._apply_date_filter(stmt, from_date, to_date, AnalysisRun.created_at)
         
@@ -87,8 +103,12 @@ class AnalyticsService:
         avg_r, total_r = res if res else (None, 0)
         
         ar_stmt = select(func.count(AnalysisRun.id)).where(AnalysisRun.status == Status.COMPLETED)
+        if repository_id or workspace_id:
+            ar_stmt = ar_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            ar_stmt = ar_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            ar_stmt = ar_stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            ar_stmt = ar_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
         ar_stmt = analytics_store._apply_date_filter(ar_stmt, from_date, to_date, AnalysisRun.created_at)
         total_analyses = db.scalar(ar_stmt) or 0
         
@@ -98,8 +118,12 @@ class AnalyticsService:
             
         dist_stmt = select(RiskScore.risk_level, func.count(RiskScore.id)).group_by(RiskScore.risk_level)
         dist_stmt = dist_stmt.join(AnalysisRun, AnalysisRun.id == RiskScore.analysis_run_id)
+        if repository_id or workspace_id:
+            dist_stmt = dist_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            dist_stmt = dist_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            dist_stmt = dist_stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            dist_stmt = dist_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
         dist_stmt = analytics_store._apply_date_filter(dist_stmt, from_date, to_date, AnalysisRun.created_at)
         
         dist_res = db.execute(dist_stmt).all()
@@ -115,7 +139,7 @@ class AnalyticsService:
         )
 
     def get_policy_analytics(
-        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime]
+        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime], workspace_id: Optional[int] = None
     ) -> PolicyAnalytics:
         stmt = select(
             func.sum(case((PolicyEvaluation.decision == "PASS", 1), else_=0)),
@@ -124,8 +148,12 @@ class AnalyticsService:
             func.count(PolicyEvaluation.id)
         )
         stmt = stmt.join(AnalysisRun, AnalysisRun.id == PolicyEvaluation.analysis_run_id)
+        if repository_id or workspace_id:
+            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            stmt = stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            stmt = stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
         stmt = analytics_store._apply_date_filter(stmt, from_date, to_date, AnalysisRun.created_at)
         
         res = db.execute(stmt).fetchone()
@@ -148,15 +176,19 @@ class AnalyticsService:
         )
 
     def get_findings_analytics(
-        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime], changed_only: bool = False
+        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime], changed_only: bool = False, workspace_id: Optional[int] = None
     ) -> FindingsAnalytics:
         stmt = select(
             func.count(Finding.id),
             func.sum(case((Finding.is_changed_file == True, 1), else_=0))
         )
         stmt = stmt.join(AnalysisRun, AnalysisRun.id == Finding.analysis_run_id)
+        if repository_id or workspace_id:
+            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            stmt = stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            stmt = stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
         stmt = analytics_store._apply_date_filter(stmt, from_date, to_date, AnalysisRun.created_at)
         
         if changed_only:
@@ -170,8 +202,12 @@ class AnalyticsService:
         # Distributions
         dist_stmt = select(Finding.severity, func.count(Finding.id)).group_by(Finding.severity)
         dist_stmt = dist_stmt.join(AnalysisRun, AnalysisRun.id == Finding.analysis_run_id)
+        if repository_id or workspace_id:
+            dist_stmt = dist_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            dist_stmt = dist_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            dist_stmt = dist_stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            dist_stmt = dist_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
         dist_stmt = analytics_store._apply_date_filter(dist_stmt, from_date, to_date, AnalysisRun.created_at)
         if changed_only:
             dist_stmt = dist_stmt.where(Finding.is_changed_file == True)
@@ -191,7 +227,7 @@ class AnalyticsService:
         )
 
     def get_testing_analytics(
-        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime]
+        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime], workspace_id: Optional[int] = None
     ) -> TestingAnalytics:
         stmt = select(
             func.sum(case((TestRun.test_outcome == "PASSED", 1), else_=0)),
@@ -201,8 +237,12 @@ class AnalyticsService:
             func.count(TestRun.id)
         )
         stmt = stmt.join(AnalysisRun, AnalysisRun.id == TestRun.analysis_run_id)
+        if repository_id or workspace_id:
+            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            stmt = stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            stmt = stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            stmt = stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
         stmt = analytics_store._apply_date_filter(stmt, from_date, to_date, AnalysisRun.created_at)
         
         res = db.execute(stmt).fetchone()
@@ -219,8 +259,12 @@ class AnalyticsService:
             func.count(CoverageReport.id)
         )
         c_stmt = c_stmt.join(TestRun, TestRun.id == CoverageReport.test_run_id).join(AnalysisRun, AnalysisRun.id == TestRun.analysis_run_id)
+        if repository_id or workspace_id:
+            c_stmt = c_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id)
         if repository_id:
-            c_stmt = c_stmt.join(PullRequest, PullRequest.id == AnalysisRun.pull_request_id).where(PullRequest.repository_id == repository_id)
+            c_stmt = c_stmt.where(PullRequest.repository_id == repository_id)
+        if workspace_id:
+            c_stmt = c_stmt.join(Repository, Repository.id == PullRequest.repository_id).where(Repository.workspace_id == workspace_id)
         c_stmt = analytics_store._apply_date_filter(c_stmt, from_date, to_date, AnalysisRun.created_at)
         
         c_res = db.execute(c_stmt).fetchone()
@@ -246,7 +290,7 @@ class AnalyticsService:
         )
 
     def get_reviewer_analytics(
-        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime]
+        self, db: Session, repository_id: Optional[int], from_date: Optional[datetime], to_date: Optional[datetime], workspace_id: Optional[int] = None
     ) -> ReviewerAnalytics:
         # Placeholder
         return ReviewerAnalytics(

@@ -5,10 +5,13 @@ import type { RepositoryDashboardItem } from '../types';
 import { GitBranch, RefreshCw } from 'lucide-react';
 import { EmptyState } from '../components/ui/EmptyState';
 import { ErrorState } from '../components/ui/ErrorState';
+import { Skeleton } from '../components/ui/Skeleton';
 import { formatPercentage, formatScore, formatDate } from '../lib/utils';
 import { Badge } from '../components/ui/Badge';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Repositories() {
+  const { workspaceVersion } = useAuth();
   const [data, setData] = useState<RepositoryDashboardItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,13 +25,13 @@ export function Repositories() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [workspaceVersion]);
 
   if (loading) {
     return (
-      <div>
-        <div className="skeleton skeleton--hero" />
-        <div className="skeleton skeleton--table" />
+      <div className="flex flex-col gap-6">
+        <Skeleton className="w-full h-[140px] rounded-[22px]" />
+        <Skeleton className="w-full h-[400px] rounded-[16px]" />
       </div>
     );
   }
@@ -42,7 +45,7 @@ export function Repositories() {
   }
 
   return (
-    <div>
+    <div className="flex flex-col gap-6">
       {/* HERO */}
       <div className="page-hero">
         <div className="page-hero__content">
@@ -72,12 +75,13 @@ export function Repositories() {
               <tr>
                 <th>Repository</th>
                 <th>Provider</th>
+                <th>Access Status</th>
                 <th>Open PRs</th>
                 <th>Avg Quality</th>
                 <th>Avg Risk</th>
                 <th>Block Rate</th>
                 <th>Test Pass Rate</th>
-                <th>Last Analysis</th>
+                <th>Last Synced</th>
               </tr>
             </thead>
             <tbody>
@@ -91,6 +95,15 @@ export function Repositories() {
                   <td>
                     <Badge variant="indigo">{repo.provider}</Badge>
                   </td>
+                  <td>
+                    {repo.access_status === 'ACTIVE' ? (
+                      <Badge variant="success">Active</Badge>
+                    ) : repo.access_status === 'ACCESS_REMOVED' ? (
+                      <Badge variant="destructive">Access Removed</Badge>
+                    ) : (
+                      <Badge variant="secondary">{repo.access_status || 'Unknown'}</Badge>
+                    )}
+                  </td>
                   <td>{repo.open_pr_count ?? 0}</td>
                   <td>
                     {repo.average_quality !== null
@@ -99,17 +112,13 @@ export function Repositories() {
                   </td>
                   <td>
                     {repo.average_risk !== null
-                      ? <span className="font-medium" style={{ color: repo.average_risk >= 75 ? 'var(--cg-red)' : repo.average_risk >= 50 ? 'var(--cg-amber)' : 'var(--cg-green)' }}>{formatScore(repo.average_risk)}</span>
+                      ? <span className="font-medium" style={{ color: repo.average_risk <= 30 ? 'var(--cg-green)' : repo.average_risk <= 70 ? 'var(--cg-amber)' : 'var(--cg-red)' }}>{formatScore(repo.average_risk)}</span>
                       : <span className="cell-muted">—</span>}
                   </td>
-                  <td>
-                    {formatPercentage(repo.block_rate)}
-                  </td>
-                  <td>
-                    {formatPercentage(repo.test_pass_rate)}
-                  </td>
-                  <td className="cell-muted whitespace-nowrap">
-                    {repo.last_analysis_at ? formatDate(repo.last_analysis_at) : 'Never'}
+                  <td>{repo.block_rate !== null ? formatPercentage(repo.block_rate) : <span className="cell-muted">—</span>}</td>
+                  <td>{repo.test_pass_rate !== null ? formatPercentage(repo.test_pass_rate) : <span className="cell-muted">—</span>}</td>
+                  <td className="cell-muted">
+                    {repo.last_synced_at ? formatDate(repo.last_synced_at) : 'Never'}
                   </td>
                 </tr>
               ))}

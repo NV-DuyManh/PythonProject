@@ -79,6 +79,8 @@ class RepositoryDashboardItem(BaseModel):
     critical_findings: int
     
     last_analysis_at: Optional[datetime]
+    access_status: Optional[str] = None
+    last_synced_at: Optional[datetime] = None
 
 
 class PRDashboardItem(BaseModel):

@@ -4,7 +4,8 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.orm import Session
 
-from codegate.database.session import get_db
+from codegate.api.dependencies import get_current_workspace, get_db
+from codegate.database.models import Team
 from codegate.schemas.dashboard import (
     DashboardOverviewResponse,
     PRDashboardItem,
@@ -24,9 +25,10 @@ def get_overview(
     repository_id: Optional[int] = None,
     from_date: Optional[datetime] = Query(None, alias="from"),
     to_date: Optional[datetime] = Query(None, alias="to"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
-    return dashboard_service.get_overview(db, repository_id, from_date, to_date)
+    return dashboard_service.get_overview(db, repository_id, from_date, to_date, workspace.id)
 
 @router.get("/repositories", response_model=List[RepositoryDashboardItem])
 def get_repositories(
@@ -37,27 +39,29 @@ def get_repositories(
     sort_order: str = Query("asc"),
     from_date: Optional[datetime] = Query(None, alias="from"),
     to_date: Optional[datetime] = Query(None, alias="to"),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     allowed_sort_fields = {
         "name", "average_quality", "average_risk", "block_rate", 
-        "test_pass_rate", "average_changed_coverage", "last_analysis_at"
+        "test_pass_rate", "average_changed_coverage", "last_analysis_at", "access_status", "last_synced_at"
     }
     if sort_by not in allowed_sort_fields:
         from fastapi import HTTPException
         raise HTTPException(status_code=422, detail=f"Invalid sort field: {sort_by}")
         
     return dashboard_service.get_repositories(
-        db, page, page_size, search, sort_by, sort_order, from_date, to_date
+        db, page, page_size, search, sort_by, sort_order, from_date, to_date, workspace.id
     )
 
 @router.get("/repositories/{repository_id}", response_model=RepositoryDetailResponse)
 def get_repository_detail(
     repository_id: int = Path(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     from fastapi import HTTPException
-    res = dashboard_service.get_repository_detail(db, repository_id)
+    res = dashboard_service.get_repository_detail(db, repository_id, workspace.id)
     if not res:
         raise HTTPException(status_code=404, detail="Repository not found")
     return res
@@ -75,19 +79,21 @@ def get_pull_requests(
     to_date: Optional[datetime] = Query(None, alias="to"),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     return dashboard_service.get_pull_requests(
-        db, repository_id, status, policy_decision, risk_level, quality_grade, author, search, from_date, to_date, page, page_size
+        db, repository_id, status, policy_decision, risk_level, quality_grade, author, search, from_date, to_date, page, page_size, workspace.id
     )
 
 @router.get("/pull-requests/{pull_request_id}", response_model=PullRequestDashboardDetail)
 def get_pull_request_detail(
     pull_request_id: int = Path(...),
     analysis_id: Optional[int] = Query(None),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
-    res = dashboard_service.get_pull_request_detail(db, pull_request_id, analysis_id)
+    res = dashboard_service.get_pull_request_detail(db, pull_request_id, analysis_id, workspace.id)
     if not res:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Pull request not found")

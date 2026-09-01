@@ -11,6 +11,10 @@ vi.mock('../api/client', () => ({
   },
 }));
 
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: vi.fn(() => ({ workspaceVersion: 0 })),
+}));
+
 describe('Overview Dashboard Page', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -19,7 +23,7 @@ describe('Overview Dashboard Page', () => {
   it('renders loading skeletons initially', () => {
     vi.mocked(CodeGateAPI.getOverview).mockReturnValue(new Promise(() => {}));
     const { container } = render(<Overview />);
-    expect(container.querySelector('.skeleton')).toBeInTheDocument();
+    expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('renders error state on API failure', async () => {

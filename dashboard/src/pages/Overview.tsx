@@ -17,9 +17,12 @@ import {
 } from 'recharts';
 import { formatPercentage, formatScore } from '../lib/utils';
 import { ErrorState } from '../components/ui/ErrorState';
+import { Skeleton } from '../components/ui/Skeleton';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useAuth } from '../contexts/AuthContext';
 
 export function Overview() {
+  const { workspaceVersion } = useAuth();
   const [data, setData] = useState<DashboardOverviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,22 +38,22 @@ export function Overview() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [workspaceVersion]);
 
   if (loading) {
     return (
-      <div className="dashboard-page">
-        <div className="skeleton skeleton--hero" />
+      <div className="flex flex-col gap-6">
+        <Skeleton className="w-full h-[200px] rounded-[22px]" />
         <div className="dashboard-grid dashboard-grid--stats">
-          <div className="skeleton skeleton--stat" />
-          <div className="skeleton skeleton--stat" />
-          <div className="skeleton skeleton--stat" />
-          <div className="skeleton skeleton--stat" />
+          <Skeleton className="w-full h-[120px] rounded-[22px]" />
+          <Skeleton className="w-full h-[120px] rounded-[22px]" />
+          <Skeleton className="w-full h-[120px] rounded-[22px]" />
+          <Skeleton className="w-full h-[120px] rounded-[22px]" />
         </div>
         <div className="dashboard-grid dashboard-grid--charts">
-          <div className="skeleton skeleton--panel" />
-          <div className="skeleton skeleton--panel" />
-          <div className="skeleton skeleton--panel" />
+          <Skeleton className="w-full h-[300px] rounded-[22px]" />
+          <Skeleton className="w-full h-[300px] rounded-[22px]" />
+          <Skeleton className="w-full h-[300px] rounded-[22px]" />
         </div>
       </div>
     );
@@ -58,7 +61,7 @@ export function Overview() {
 
   if (error) {
     return (
-      <div className="dashboard-page flex flex-col items-center justify-center p-8">
+      <div className="flex flex-col items-center justify-center p-8 min-h-[500px]">
         <ErrorState onRetry={load} description={error} />
       </div>
     );
@@ -66,7 +69,7 @@ export function Overview() {
 
   if (!data || data.analyses_total === 0) {
     return (
-      <div className="dashboard-page flex flex-col items-center justify-center p-8 h-full">
+      <div className="flex flex-col items-center justify-center p-8 min-h-[500px]">
         <EmptyState 
           icon={LayoutDashboard} 
           title="No analysis data yet" 
@@ -79,7 +82,7 @@ export function Overview() {
   const d = data;
 
   return (
-    <div className="dashboard-page">
+    <div className="flex flex-col gap-6">
       {/* HERO */}
       <div className="page-hero">
         <div className="page-hero__content">

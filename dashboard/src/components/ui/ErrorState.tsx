@@ -17,17 +17,12 @@ export function ErrorState({
 }: ErrorStateProps) {
   return (
     <div
-      className={cn(
-        'flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-red-200 bg-red-50/30 p-8 text-center animate-in fade-in-50',
-        className
-      )}
+      className={cn('error-state', className)}
       {...props}
     >
-      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-red-100 mb-4">
-        <AlertTriangle className="h-8 w-8 text-red-600" />
-      </div>
-      <h3 className="mb-2 text-xl font-semibold text-slate-800">{title}</h3>
-      <p className="mb-6 max-w-sm text-sm text-slate-600">{description}</p>
+      <AlertTriangle className="error-state__icon" />
+      <h3 className="error-state__title">{title}</h3>
+      <p className="error-state__desc">{description}</p>
       {onRetry && (
         <Button variant="outline" onClick={onRetry} className="flex items-center gap-2">
           <RefreshCcw className="h-4 w-4" />

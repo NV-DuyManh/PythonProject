@@ -3,9 +3,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from codegate.api.dependencies import get_db
+from codegate.api.dependencies import get_current_workspace, get_db
 from codegate.api.pagination import PaginationParams, get_pagination_params, paginate
-from codegate.database.models import Severity, Source
+from codegate.database.models import Severity, Source, Team
 from codegate.schemas.finding import FindingResponse
 from codegate.schemas.pagination import PaginatedResponse
 from codegate.services.finding_service import finding_service
@@ -19,7 +19,8 @@ def list_findings_for_analysis(
     source: Optional[Source] = None,
     category: Optional[str] = None,
     pagination: PaginationParams = Depends(get_pagination_params),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(get_current_workspace)
 ):
     skip = (pagination.page - 1) * pagination.page_size
     items, total = finding_service.list(
@@ -29,6 +30,7 @@ def list_findings_for_analysis(
         source=source, 
         category=category, 
         skip=skip, 
-        limit=pagination.page_size
+        limit=pagination.page_size,
+        workspace_id=workspace.id
     )
     return paginate(items, total, pagination)

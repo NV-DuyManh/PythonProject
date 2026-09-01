@@ -15,7 +15,8 @@ def quality_test_run(db_session: Session):
         full_name="test-owner/test-repo",
         provider=Provider.GITHUB,
         provider_repository_id="test/test-repo",
-        url="https://github.com/test/test-repo"
+        url="https://github.com/test/test-repo",
+        workspace_id=1
     )
     db_session.add(repo)
     db_session.commit()

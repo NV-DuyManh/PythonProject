@@ -10,6 +10,10 @@ vi.mock('../api/client', () => ({
   },
 }));
 
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: vi.fn(() => ({ workspaceVersion: 0 })),
+}));
+
 describe('PullRequests Page', () => {
   beforeEach(() => {
     vi.resetAllMocks();

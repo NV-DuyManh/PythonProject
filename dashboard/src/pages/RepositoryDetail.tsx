@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 import { useParams, Link } from 'react-router-dom';
 import { CodeGateAPI } from '../api/client';
 import { ErrorState } from '../components/ui/ErrorState';
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 
 export function RepositoryDetail() {
+  const { workspaceVersion } = useAuth();
   const { repositoryId } = useParams<{ repositoryId: string }>();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -34,7 +36,7 @@ export function RepositoryDetail() {
       .finally(() => setLoading(false));
   }, [repositoryId]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, workspaceVersion]);
 
   if (loading) {
     return (

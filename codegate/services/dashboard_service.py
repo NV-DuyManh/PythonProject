@@ -43,9 +43,10 @@ class DashboardService:
         db: Session, 
         repository_id: Optional[int] = None, 
         from_date: Optional[datetime] = None, 
-        to_date: Optional[datetime] = None
+        to_date: Optional[datetime] = None,
+        workspace_id: Optional[int] = None
     ) -> DashboardOverviewResponse:
-        kpis = analytics_store.get_overview_kpis(db, repository_id, from_date, to_date)
+        kpis = analytics_store.get_overview_kpis(db, repository_id, from_date, to_date, workspace_id)
         return DashboardOverviewResponse(**kpis)
 
     def get_repositories(
@@ -57,11 +58,14 @@ class DashboardService:
         sort_by: str = "name",
         sort_order: str = "asc",
         from_date: Optional[datetime] = None,
-        to_date: Optional[datetime] = None
+        to_date: Optional[datetime] = None,
+        workspace_id: Optional[int] = None
     ) -> List[RepositoryDashboardItem]:
         # Simple repository fetch for now. We can join metrics if needed.
         # But to avoid N+1 we should fetch them grouped.
         stmt = select(Repository)
+        if workspace_id:
+            stmt = stmt.where(Repository.workspace_id == workspace_id)
         if search:
             stmt = stmt.where(Repository.name.ilike(f"%{search}%"))
             
@@ -70,7 +74,7 @@ class DashboardService:
         items = []
         for repo in repos:
             # We fetch individually for now to pass the tests. We can optimize later if time permits.
-            kpis = analytics_store.get_overview_kpis(db, repository_id=repo.id, from_date=from_date, to_date=to_date)
+            kpis = analytics_store.get_overview_kpis(db, repository_id=repo.id, from_date=from_date, to_date=to_date, workspace_id=workspace_id)
             last_analysis_stmt = select(func.max(AnalysisRun.created_at)).join(
                 PullRequest, PullRequest.id == AnalysisRun.pull_request_id
             ).where(PullRequest.repository_id == repo.id)
@@ -93,7 +97,9 @@ class DashboardService:
                     test_pass_rate=kpis["test_pass_rate"],
                     average_changed_coverage=kpis["average_changed_line_coverage"],
                     critical_findings=kpis["critical_findings"],
-                    last_analysis_at=last_analysis_at
+                    last_analysis_at=last_analysis_at,
+                    access_status=getattr(repo, 'access_status', None),
+                    last_synced_at=getattr(repo, 'last_synced_at', None)
                 )
             )
             
@@ -111,13 +117,14 @@ class DashboardService:
     def get_repository_detail(
         self,
         db: Session,
-        repository_id: int
+        repository_id: int,
+        workspace_id: Optional[int] = None
     ) -> Optional[RepositoryDetailResponse]:
         repo = db.get(Repository, repository_id)
-        if not repo:
+        if not repo or (workspace_id and repo.workspace_id != workspace_id):
             return None
 
-        kpis = analytics_store.get_overview_kpis(db, repository_id=repo.id)
+        kpis = analytics_store.get_overview_kpis(db, repository_id=repo.id, workspace_id=workspace_id)
 
         # Last analysis timestamp
         last_analysis_stmt = select(func.max(AnalysisRun.created_at)).join(
@@ -164,7 +171,7 @@ class DashboardService:
         }
 
         # Recent PRs (up to 10)
-        recent_prs = self.get_pull_requests(db, repository_id=repo.id, page=1, page_size=10)
+        recent_prs = self.get_pull_requests(db, repository_id=repo.id, page=1, page_size=10, workspace_id=workspace_id)
 
         return RepositoryDetailResponse(
             repository=repo_comp,
@@ -197,10 +204,13 @@ class DashboardService:
         from_date: Optional[datetime] = None,
         to_date: Optional[datetime] = None,
         page: int = 1,
-        page_size: int = 20
+        page_size: int = 20,
+        workspace_id: Optional[int] = None
     ) -> List[PRDashboardItem]:
         # Very simplified for now. In a real app we'd build a complex join.
         stmt = select(PullRequest)
+        if workspace_id:
+            stmt = stmt.join(Repository).where(Repository.workspace_id == workspace_id)
         if repository_id:
             stmt = stmt.where(PullRequest.repository_id == repository_id)
         if author:
@@ -297,13 +307,16 @@ class DashboardService:
         self,
         db: Session,
         pull_request_id: int,
-        analysis_id: Optional[int] = None
+        analysis_id: Optional[int] = None,
+        workspace_id: Optional[int] = None
     ) -> Optional[PullRequestDashboardDetail]:
         pr = db.get(PullRequest, pull_request_id)
         if not pr:
             return None
             
         repo = db.get(Repository, pr.repository_id)
+        if workspace_id and repo.workspace_id != workspace_id:
+            return None
         
         # Base PR component
         pr_comp = PRDetailComponent(

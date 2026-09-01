@@ -48,6 +48,8 @@ export interface RepositoryDashboardItem {
   average_changed_coverage: number | null;
   critical_findings: number;
   last_analysis_at: string | null;
+  access_status: string;
+  last_synced_at: string | null;
 }
 
 export interface PRDashboardItem {

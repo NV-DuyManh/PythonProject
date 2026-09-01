@@ -1,7 +1,8 @@
 from datetime import datetime
 
-from sqlalchemy import DateTime, Integer, String, func
+from sqlalchemy import DateTime, ForeignKey, Integer, String, func, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import Optional
 
 from codegate.database.base import Base
 
@@ -16,6 +17,12 @@ class GitHubConnection(Base):
     auth_type: Mapped[str] = mapped_column(String(50), default="app") # app or pat
     status: Mapped[str] = mapped_column(String(50), default="active")
     installation_id: Mapped[str] = mapped_column(String(255), nullable=True)
+    workspace_id: Mapped[Optional[int]] = mapped_column(ForeignKey("teams.id", ondelete="RESTRICT"), nullable=True, index=True)
+    repository_selection: Mapped[str] = mapped_column(String(50), nullable=True)
+    
+    last_sync_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    last_sync_error: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    last_synced_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
@@ -27,4 +34,25 @@ class GitHubConnection(Base):
         DateTime(timezone=True), nullable=True
     )
     
+    workspace = relationship("Team")
     repositories: Mapped[list["Repository"]] = relationship("Repository", back_populates="github_connection")
+
+    __table_args__ = (
+        UniqueConstraint("provider", "installation_id", name="uix_provider_installation_id"),
+    )
+
+
+class GitHubInstallationState(Base):
+    __tablename__ = "github_installation_states"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    state_hash: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), index=True)
+    workspace_id: Mapped[int] = mapped_column(ForeignKey("teams.id", ondelete="CASCADE"), index=True)
+    
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
