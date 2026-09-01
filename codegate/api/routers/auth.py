@@ -115,9 +115,18 @@ async def github_callback(
         user.username = gh_user.login
         user.email = gh_user.email or user.email
         user.avatar_url = gh_user.avatar_url or user.avatar_url
-        user.display_name = gh_user.name or user.display_name
         user.last_login_at = datetime.now(timezone.utc)
-        db.commit()
+        
+    # Ensure active workspace is set if user has memberships
+    if not user.active_workspace_id:
+        from codegate.database.models import TeamMember
+        first_member = db.scalar(
+            select(TeamMember).where(TeamMember.user_id == user.id)
+        )
+        if first_member:
+            user.active_workspace_id = first_member.team_id
+            
+    db.commit()
 
     # Create session
     session_token = secrets.token_urlsafe(64)

@@ -50,7 +50,15 @@ async def process_webhook_synchronously(db: Session, delivery_id: str, event_typ
                 if not connection:
                     raise ValueError(f"No active GitHubConnection found for installation {installation_id}")
                 
-                get_settings().set("GITHUB.INSTALLATION_ID", installation_id)
+                from codegate.config.settings import settings as cg_settings
+                
+                get_settings().set("GITHUB.DEPLOYMENT_TYPE", "app")
+                get_settings().set("GITHUB.APP_ID", cg_settings.GITHUB_APP_ID)
+                if cg_settings.GITHUB_APP_PRIVATE_KEY_PATH:
+                    with open(cg_settings.GITHUB_APP_PRIVATE_KEY_PATH, 'r') as f:
+                        get_settings().set("GITHUB.PRIVATE_KEY", f.read())
+                
+                get_settings().set("GITHUB.INSTALLATION_ID", int(installation_id))
                 
                 # 1. Sync Data (Upsert Repo and PR)
                 sync_service = GithubSyncService(db)

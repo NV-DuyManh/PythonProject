@@ -25,3 +25,8 @@ enabled = true
 publish_output = true
 demand_self_review = true
 approve_pr_on_self_review = true
+
+[config]
+model = "groq/openai/gpt-oss-120b"
+fallback_models = ["groq/openai/gpt-oss-20b"]
+custom_model_max_tokens = 8192

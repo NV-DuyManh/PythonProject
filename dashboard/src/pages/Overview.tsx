@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { CodeGateAPI } from '../api/client';
 import type { DashboardOverviewResponse } from '../types';
 import {
   ShieldCheck,
@@ -22,23 +21,55 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Overview() {
-  const { workspaceVersion } = useAuth();
+  const { workspaceVersion, activeWorkspace, loading: authLoading } = useAuth();
   const [data, setData] = useState<DashboardOverviewResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const load = () => {
-    setLoading(true);
-    setError(null);
-    CodeGateAPI.getOverview()
-      .then((overview) => {
-        setData(overview);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  };
+  useEffect(() => {
+    if (authLoading || !activeWorkspace) return;
 
-  useEffect(() => { load(); }, [workspaceVersion]);
+    let cancelled = false;
+
+    const fetchOverview = async (retries = 3, delay = 800) => {
+      setLoading(true);
+      setError(null);
+      for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+          const res = await fetch(
+            `${import.meta.env.VITE_CODEGATE_API_URL || 'http://127.0.0.1:8000/api/v1'}/dashboard/overview`,
+            { credentials: 'include' }
+          );
+          if (!res.ok) {
+            if (res.status === 401 && attempt < retries - 1) {
+              // Session cookie might not be ready yet after OAuth redirect
+              await new Promise(r => setTimeout(r, delay));
+              continue;
+            }
+            throw new Error('Failed to fetch overview');
+          }
+          const overview = await res.json();
+          if (!cancelled) {
+            setData(overview);
+            setError(null);
+            setLoading(false);
+          }
+          return;
+        } catch (err: unknown) {
+          if (attempt === retries - 1 && !cancelled) {
+            setError(err instanceof Error ? err.message : 'Failed to fetch overview');
+            setLoading(false);
+          } else {
+            await new Promise(r => setTimeout(r, delay));
+          }
+        }
+      }
+    };
+
+    fetchOverview();
+
+    return () => { cancelled = true; };
+  }, [workspaceVersion, authLoading, activeWorkspace?.id]);
 
   if (loading) {
     return (
@@ -62,7 +93,7 @@ export function Overview() {
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center p-8 min-h-[500px]">
-        <ErrorState onRetry={load} description={error} />
+        <ErrorState onRetry={() => window.location.reload()} description={error} />
       </div>
     );
   }
@@ -95,7 +126,7 @@ export function Overview() {
           </p>
         </div>
         <div className="page-hero__actions">
-          <button className="btn-primary" onClick={load}>
+          <button className="btn-primary" onClick={() => window.location.reload()}>
             <RefreshCw size={15} strokeWidth={2} /> Refresh Data
           </button>
         </div>

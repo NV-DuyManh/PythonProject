@@ -45,11 +45,12 @@ async def list_workspaces(user: User = Depends(get_current_user), db: Session = 
         # Avoid N+1 in a real app, but fine for Phase 7
         team = db.scalar(select(Team).where(Team.id == member.team_id))
         if team:
+            role_str = member.role.value if hasattr(member.role, "value") else str(member.role)
             result.append(WorkspaceResponse(
                 id=team.id,
                 name=team.name,
                 slug=getattr(team, "slug", generate_slug(team.name)),  # Phase 7 fallback
-                role=member.role.value
+                role=role_str
             ))
     return result
 

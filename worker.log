@@ -1,0 +1,25 @@
+ 
+2026-09-01 10:01:38.347 | WARNING  | pr_agent.custom_merge_loader:load:65 - Settings file not found: /app/pr_agent/settings/.secrets.toml. Skipping it.
+2026-09-01 10:01:38.347 | WARNING  | pr_agent.custom_merge_loader:load:65 - Settings file not found: /app/pr_agent/settings_prod/.secrets.toml. Skipping it.
+[2026-09-01 10:01:43,118: INFO/MainProcess] Connected to redis://redis:6379/0
+[2026-09-01 10:01:43,124: INFO/MainProcess] mingle: searching for neighbors
+[2026-09-01 10:01:44,134: INFO/MainProcess] mingle: all alone
+[2026-09-01 10:01:44,144: INFO/MainProcess] celery@f0e5cbf10f2b ready.
+ -------------- celery@f0e5cbf10f2b v5.6.3 (recovery)
+--- ***** ----- 
+-- ******* ---- Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41 2026-09-01 10:01:42
+- *** --- * --- 
+- ** ---------- [config]
+- ** ---------- .> app:         codegate_worker:0x771808b72e10
+- ** ---------- .> transport:   redis://redis:6379/0
+- ** ---------- .> results:     redis://redis:6379/0
+- *** --- * --- .> concurrency: 2 (prefork)
+-- ******* ---- .> task events: OFF (enable -E to monitor tasks in this worker)
+--- ***** ----- 
+ -------------- [queues]
+                .> celery           exchange=celery(direct) key=celery
+                
+
+[tasks]
+  . codegate.worker.tasks.analyze_pull_request
+

@@ -95,6 +95,7 @@ input,
 select {
   font-family: inherit;
 }
+}
 
 @layer components {
 /* ============================================================
@@ -105,6 +106,16 @@ select {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   min-height: 100vh;
+}
+
+.topbar {
+  height: 64px;
+  background: var(--cg-surface);
+  border-bottom: 1px solid var(--cg-border);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 /* ============================================================
@@ -118,6 +129,7 @@ select {
   flex-direction: column;
   overflow-y: auto;
   border-right: 1px solid rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
 }
 
 .sidebar__brand {
@@ -1304,9 +1316,5 @@ select {
     min-width: unset;
   }
 }
-
-}
-
-
 }
 

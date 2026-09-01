@@ -55,7 +55,7 @@ def get_system_status(db: Session = Depends(get_db)) -> Dict[str, Any]:
             "status": db_status,
             "engine": engine_name
         },
-        "data_mode": "DEMO",
+        "data_mode": "LIVE" if gh_conn else "STANDALONE",
         "github": {
             "status": gh_status,
             "account": account,

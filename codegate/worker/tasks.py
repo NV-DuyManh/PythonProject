@@ -98,6 +98,20 @@ def analyze_pull_request(self, analysis_run_id: int):
         if not pr_url:
             raise ValueError("Could not determine PR URL")
 
+        # Inject settings for PR-Agent
+        from codegate.config.settings import settings as cg_settings
+        from pr_agent.config_loader import get_settings
+        get_settings().set("GITHUB.DEPLOYMENT_TYPE", "app")
+        get_settings().set("GITHUB.APP_ID", cg_settings.GITHUB_APP_ID)
+        if cg_settings.GITHUB_APP_PRIVATE_KEY_PATH:
+            with open(cg_settings.GITHUB_APP_PRIVATE_KEY_PATH, 'r') as f:
+                get_settings().set("GITHUB.PRIVATE_KEY", f.read())
+        
+        # Get installation ID from the repository's connection
+        if pr.repository and pr.repository.github_connection:
+            installation_id = pr.repository.github_connection.installation_id
+            get_settings().set("GITHUB.INSTALLATION_ID", int(installation_id))
+
         # 3. Execute Analysis
         orchestrator = AnalysisOrchestrator(db)
         # We need to run _execute_run async. But this task is sync.

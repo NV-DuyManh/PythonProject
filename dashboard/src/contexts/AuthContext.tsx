@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [workspaceVersion, setWorkspaceVersion] = useState(0);
 
-  const fetchAuthData = async () => {
+  const fetchAuthData = async (isInitial = false) => {
     try {
       const userRes = await fetch('http://127.0.0.1:8000/api/v1/auth/me', { credentials: 'include' });
       if (!userRes.ok) throw new Error('Not authenticated');
@@ -50,9 +50,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (userData.active_workspace_id) {
         const active = workspacesData.find((w: Workspace) => w.id === userData.active_workspace_id);
-        setActiveWorkspace(active || null);
+        setActiveWorkspace(active || (workspacesData.length > 0 ? workspacesData[0] : null));
+      } else if (workspacesData.length > 0) {
+        setActiveWorkspace(workspacesData[0]);
+        // Background activate to keep backend in sync
+        await fetch(`http://127.0.0.1:8000/api/v1/workspaces/${workspacesData[0].id}/activate`, {
+          method: 'POST',
+          credentials: 'include'
+        }).catch(console.error);
       } else {
         setActiveWorkspace(null);
+      }
+
+      // On initial load after OAuth redirect, make a warm-up request
+      // to ensure the session cookie is fully established before
+      // downstream pages make their own API calls
+      if (isInitial && userData) {
+        await fetch('http://127.0.0.1:8000/api/v1/system/status', { credentials: 'include' }).catch(() => {});
       }
     } catch (error) {
       setUser(null);
@@ -64,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    fetchAuthData();
+    fetchAuthData(true);
   }, []);
 
   const logout = async () => {

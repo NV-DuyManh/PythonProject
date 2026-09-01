@@ -11,6 +11,9 @@ from litellm import acompletion
 from tenacity import (retry, retry_if_exception_type,
                       retry_if_not_exception_type, stop_after_attempt)
 
+_GROQ_KEY_IDX = 0
+_GEMINI_KEY_IDX = 0
+
 from pr_agent.algo import (CLAUDE_EXTENDED_THINKING_MODELS,
                            NO_SUPPORT_TEMPERATURE_MODELS,
                            STREAMING_REQUIRED_MODELS,
@@ -625,6 +628,7 @@ class LiteLLMAIHandler(BaseAiHandler):
         reraise=True,  # surface the provider's error; RetryError hides the reason
     )
     async def chat_completion(self, model: str, system: str, user: str, temperature: float = 0.2, img_path: str = None):
+        global _GROQ_KEY_IDX
         # Serialize env-var mutation + Bedrock call for IMDS mode to prevent concurrent
         # requests from interleaving os.environ credentials during asyncio.gather usage.
         # Validate config-derived kwargs before the try/except below, so a malformed value raises a
@@ -1003,11 +1007,22 @@ class LiteLLMAIHandler(BaseAiHandler):
                 if custom_llm_provider:
                     kwargs["custom_llm_provider"] = custom_llm_provider
 
+                # Implement Groq API Key Rotation
+                groq_keys_str = os.environ.get("VITE_GROQ_API_KEYS", "").strip()
+                if "groq/" in model and groq_keys_str:
+                    groq_keys = [k.strip() for k in groq_keys_str.split(",") if k.strip()]
+                    if groq_keys:
+                        current_key = groq_keys[_GROQ_KEY_IDX % len(groq_keys)]
+                        kwargs["api_key"] = current_key
+                        get_logger().info(f"Using Groq API Key ending in ...{current_key[-4:]} (Index {_GROQ_KEY_IDX % len(groq_keys)})")
+
                 # Get completion with automatic streaming detection
                 resp, finish_reason, response_obj = await self._get_completion(**kwargs)
 
             except openai.RateLimitError as e:
                 get_logger().error(f"Rate limit error during LLM inference: {e}")
+                if "groq/" in model and os.environ.get("VITE_GROQ_API_KEYS"):
+                    _GROQ_KEY_IDX += 1
                 raise
             except openai.APIError as e:
                 if _bedrock_imds and not self._aws_imds_fell_back and self._aws_static_creds:
@@ -1019,6 +1034,8 @@ class LiteLLMAIHandler(BaseAiHandler):
                     resp, finish_reason, response_obj = await self._get_completion(**kwargs)
                 else:
                     get_logger().warning(f"Error during LLM inference: {e}")
+                    if "groq/" in model and os.environ.get("VITE_GROQ_API_KEYS") and ("AuthenticationError" in str(e) or "401" in str(e) or "403" in str(e)):
+                        _GROQ_KEY_IDX += 1
                     raise
             except Exception as e:
                 get_logger().warning(f"Unknown error during LLM inference: {e}")
