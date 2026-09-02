@@ -28,6 +28,6 @@ class CodeGateSettings(BaseSettings):
     GITHUB_APP_SETUP_URL: str = "http://127.0.0.1:8000/api/v1/integrations/github/setup"
     CODEGATE_FRONTEND_URL: str = "http://127.0.0.1:5173"
 
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
+    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
 settings = CodeGateSettings()

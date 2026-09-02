@@ -35,6 +35,10 @@ class Permissions(str, Enum):
     POLICY_VIEW = "policy.view"
     POLICY_MANAGE = "policy.manage"
     
+    # Testing
+    TESTING_VIEW = "testing.view"
+    TESTING_MANAGE = "testing.manage"
+    
     # Other
     REVIEWER_VIEW = "reviewer.view"
     DASHBOARD_VIEW = "dashboard.view"
@@ -60,6 +64,8 @@ ROLE_PERMISSIONS: Dict[Role, Set[Permissions]] = {
         Permissions.ANALYSIS_RETRY,
         Permissions.POLICY_VIEW,
         Permissions.POLICY_MANAGE,
+        Permissions.TESTING_VIEW,
+        Permissions.TESTING_MANAGE,
         Permissions.REVIEWER_VIEW,
         Permissions.DASHBOARD_VIEW,
         Permissions.ANALYTICS_VIEW,
@@ -76,6 +82,8 @@ ROLE_PERMISSIONS: Dict[Role, Set[Permissions]] = {
         Permissions.ANALYSIS_RETRY,
         Permissions.POLICY_VIEW,
         Permissions.POLICY_MANAGE,
+        Permissions.TESTING_VIEW,
+        Permissions.TESTING_MANAGE,
         Permissions.REVIEWER_VIEW,
         Permissions.DASHBOARD_VIEW,
         Permissions.ANALYTICS_VIEW,
@@ -89,12 +97,14 @@ ROLE_PERMISSIONS: Dict[Role, Set[Permissions]] = {
         Permissions.DASHBOARD_VIEW,
         Permissions.ANALYTICS_VIEW,
         Permissions.POLICY_VIEW,
+        Permissions.TESTING_VIEW,
     },
     Role.DEVELOPER: {
         Permissions.WORKSPACE_VIEW,
         Permissions.REPOSITORY_VIEW,
         Permissions.ANALYSIS_VIEW,
         Permissions.DASHBOARD_VIEW,
+        Permissions.TESTING_VIEW,
     }
 }
 

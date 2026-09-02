@@ -17,6 +17,9 @@ vi.mock('./api/client', () => ({
     getPullRequestDetail: vi.fn(),
     getSystemStatus: vi.fn(),
     getRepositoryDetail: vi.fn(),
+    syncGitHubConnection: vi.fn(),
+    getTestingConfiguration: async () => ({}),
+    updateTestingConfiguration: async () => ({})
   },
 }));
 

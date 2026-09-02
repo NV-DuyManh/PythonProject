@@ -43,6 +43,7 @@ class CoverageMetrics(BaseModel):
     missing_lines: int = 0
     line_coverage: Optional[float] = None
     branch_coverage: Optional[float] = None
+    files: Optional[Dict[str, Any]] = None
 
 class ChangedCoverageMetrics(BaseModel):
     model_config = ConfigDict(extra="ignore")

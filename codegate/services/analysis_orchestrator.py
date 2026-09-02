@@ -113,7 +113,8 @@ class AnalysisOrchestrator:
                 # Need local repo path. Pr agent adapter usually clones to a temp dir.
                 # Here we assume git_provider provides repo_path or it runs locally
                 repo_path = getattr(git_provider, "repo_path", ".")
-                base_sha = getattr(git_provider.pr, "base", {}).get("sha", "")
+                base = getattr(git_provider.pr, "base", None)
+                base_sha = getattr(base, "sha", "") if base else ""
                 
                 test_service = TestExecutionService(TestingStore(), AnalysisStore())
                 # Fire and wait for tests

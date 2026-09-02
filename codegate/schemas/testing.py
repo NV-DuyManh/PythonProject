@@ -11,6 +11,9 @@ class TestConfigurationUpdate(BaseModel):
     working_directory: Optional[str] = None
     test_paths: Optional[List[str]] = None
     pytest_args: Optional[List[str]] = None
+    install_command: Optional[str] = None
+    test_command: Optional[str] = None
+    network_enabled: Optional[bool] = None
     timeout_seconds: Optional[int] = None
     coverage_enabled: Optional[bool] = None
     coverage_source: Optional[List[str]] = None
@@ -27,6 +30,9 @@ class TestConfigurationResponse(BaseModel):
     working_directory: Optional[str] = None
     test_paths_json: Optional[Any] = None
     pytest_args_json: Optional[Any] = None
+    install_command: Optional[str] = None
+    test_command: Optional[str] = None
+    network_enabled: bool
     timeout_seconds: int
     coverage_enabled: bool
     coverage_source_json: Optional[Any] = None

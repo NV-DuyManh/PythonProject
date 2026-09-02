@@ -12,7 +12,11 @@ vi.mock('../api/client', () => ({
 }));
 
 vi.mock('../contexts/AuthContext', () => ({
-  useAuth: vi.fn(() => ({ workspaceVersion: 0 })),
+  useAuth: vi.fn(() => ({ 
+    workspaceVersion: 0,
+    activeWorkspace: { id: 1, name: 'Test' },
+    authLoading: false
+  })),
 }));
 
 describe('Overview Dashboard Page', () => {

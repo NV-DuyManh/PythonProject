@@ -21,36 +21,45 @@ class PytestRunner:
                   test_paths: list[str], 
                   pytest_args: list[str], 
                   timeout_seconds: int,
-                  coverage_enabled: bool) -> Tuple[ExecutionStatus, TestOutcome, JUnitMetrics, Optional[CoverageMetrics], str, str]:
+                  coverage_enabled: bool,
+                  install_command: Optional[str] = None,
+                  test_command: Optional[str] = None,
+                  network_enabled: bool = False) -> Tuple[ExecutionStatus, TestOutcome, JUnitMetrics, Optional[CoverageMetrics], str, str]:
         
         # We output xml to a fixed file in the working directory
         junit_xml_path = "junit_report.xml"
         coverage_json_path = "coverage_report.json"
         
-        command = [
-            "python", "-m"
-        ]
-        
-        if coverage_enabled:
-            command.extend(["coverage", "run", "--branch", "-m", "pytest"])
+        if install_command:
+            command = ["sh", "-c", f"{install_command} && {test_command or 'pytest'}"]
+        elif test_command:
+            command = ["sh", "-c", test_command]
         else:
-            command.append("pytest")
+            command = [
+                "python", "-m"
+            ]
             
-        command.extend([
-            f"--junitxml={junit_xml_path}"
-        ])
-        
-        if pytest_args:
-            command.extend(pytest_args)
+            if coverage_enabled:
+                command.extend(["coverage", "run", "--branch", "-m", "pytest"])
+            else:
+                command.append("pytest")
+                
+            command.extend([
+                f"--junitxml={junit_xml_path}"
+            ])
             
-        if test_paths:
-            command.extend(test_paths)
+            if pytest_args:
+                command.extend(pytest_args)
+                
+            if test_paths:
+                command.extend(test_paths)
             
         # Execute the test command
         exit_code, stdout, stderr, is_timeout = await self.executor.execute(
             command=command,
             working_directory=working_directory,
-            timeout_seconds=timeout_seconds
+            timeout_seconds=timeout_seconds,
+            network_enabled=network_enabled
         )
         
         if is_timeout:
@@ -71,10 +80,13 @@ class PytestRunner:
         if coverage_enabled:
             # Generate the json report
             cov_cmd = ["python", "-m", "coverage", "json", "-o", coverage_json_path]
+            # If the user supplied a custom test command, we don't know how to run coverage automatically unless they output coverage.json.
+            # We'll just run `coverage json` and see if they ran coverage via their script.
             await self.executor.execute(
                 command=cov_cmd,
                 working_directory=working_directory,
-                timeout_seconds=60
+                timeout_seconds=60,
+                network_enabled=False
             )
             
             cov_full_path = os.path.join(working_directory, coverage_json_path)

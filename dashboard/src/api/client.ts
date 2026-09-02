@@ -131,4 +131,21 @@ export class CodeGateAPI {
     }
     return res.json();
   }
+
+  static async getTestingConfiguration(id: number): Promise<any> {
+    const res = await this.request(`/repositories/${id}/testing`, { signal: this.getSignal(`get_testing_${id}`) });
+    if (!res.ok) throw new Error('Failed to fetch testing configuration');
+    return res.json();
+  }
+
+  static async updateTestingConfiguration(id: number, config: any): Promise<any> {
+    const res = await this.request(`/repositories/${id}/testing`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(config),
+      signal: this.getSignal(`update_testing_${id}`)
+    });
+    if (!res.ok) throw new Error('Failed to update testing configuration');
+    return res.json();
+  }
 }

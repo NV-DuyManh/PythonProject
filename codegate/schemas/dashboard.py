@@ -164,6 +164,7 @@ class PolicyDetailComponent(BaseModel):
     blocked_rules: int
     flags: Optional[Any]
     breakdown: Any
+    reasons: Optional[List[str]] = []
 
 
 class TestsDetailComponent(BaseModel):
@@ -212,8 +213,8 @@ class PullRequestDashboardDetail(BaseModel):
     policy: Optional[PolicyDetailComponent]
     tests: Optional[TestsDetailComponent]
     coverage: Optional[CoverageDetailComponent]
-    findings: Optional[FindingsDetailComponent]
-    reviewer_recommendation: Optional[ReviewerDetailComponent]
+    findings: Optional[List[Any]]
+    reviewer_recommendation: Optional[List[Any]]
 
 
 class RepositoryDetailComponent(BaseModel):

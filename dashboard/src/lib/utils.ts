@@ -6,7 +6,7 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatPercentage(value: number | null | undefined): string {
-  if (value === null || value === undefined) return 'Not available';
+  if (value === null || value === undefined) return 'N/A';
   return `${value.toFixed(1)}%`;
 }
 

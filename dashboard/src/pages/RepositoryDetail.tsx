@@ -18,6 +18,7 @@ import {
   CheckCircle,
   AlertTriangle,
 } from 'lucide-react';
+import { TestingConfiguration } from '../components/TestingConfiguration';
 
 export function RepositoryDetail() {
   const { workspaceVersion } = useAuth();
@@ -211,6 +212,8 @@ export function RepositoryDetail() {
           </div>
         </div>
       </div>
+      
+      {repositoryId && <TestingConfiguration repositoryId={parseInt(repositoryId, 10)} />}
 
       {/* RECENT PULL REQUESTS */}
       <div className="dashboard-panel">

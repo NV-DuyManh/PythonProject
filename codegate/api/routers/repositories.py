@@ -3,14 +3,17 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
-from codegate.api.dependencies import get_current_workspace, get_db
+from codegate.api.dependencies import get_current_workspace, get_db, require_workspace_permission
 from codegate.api.pagination import PaginationParams, get_pagination_params, paginate
+from codegate.auth.permissions import Permissions
 from codegate.database.models import Provider, Team
 from codegate.repositories.policy_store import quality_policy_store
 from codegate.schemas.pagination import PaginatedResponse
 from codegate.schemas.policy import QualityPolicyResponse, QualityPolicyUpdate
 from codegate.schemas.repository import RepositoryCreate, RepositoryResponse, RepositoryUpdate
+from codegate.schemas.testing import TestConfigurationResponse, TestConfigurationUpdate
 from codegate.services.repository_service import repository_service
+from codegate.repositories.testing_store import TestingStore
 
 router = APIRouter(prefix="/repositories", tags=["Repositories"])
 
@@ -102,5 +105,38 @@ def update_repository_policy(
     block_r = obj_in.get('risk_block_threshold', current_policy.risk_block_threshold)
     if warn_r > block_r:
         raise HTTPException(status_code=422, detail="risk_warning_threshold must be <= risk_block_threshold")
+    policy = quality_policy_store.update_policy(db, repo_id, obj_in)
+    db.commit()
+    return policy
+@router.get("/{repo_id}/testing", response_model=TestConfigurationResponse)
+def get_repository_testing(
+    repo_id: int,
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(require_workspace_permission(Permissions.TESTING_VIEW))
+):
+    repo = repository_service.get(db, repo_id, workspace.id)
+    if not repo:
+        raise HTTPException(status_code=404, detail="Repository not found")
         
-    return quality_policy_store.update_policy(db, repo_id, obj_in)
+    store = TestingStore()
+    config = store.get_test_configuration(db, repo_id)
+    if not config:
+        config = store.upsert_test_configuration(db, repo_id, {})
+    return config
+
+@router.put("/{repo_id}/testing", response_model=TestConfigurationResponse)
+def update_repository_testing(
+    repo_id: int,
+    config_in: TestConfigurationUpdate,
+    db: Session = Depends(get_db),
+    workspace: Team = Depends(require_workspace_permission(Permissions.TESTING_MANAGE))
+):
+    repo = repository_service.get(db, repo_id, workspace.id)
+    if not repo:
+        raise HTTPException(status_code=404, detail="Repository not found")
+        
+    store = TestingStore()
+    obj_in = config_in.model_dump(exclude_unset=True)
+    config = store.upsert_test_configuration(db, repo_id, obj_in)
+    db.commit()
+    return config

@@ -27,9 +27,10 @@ class TestExecutionService:
         if not config.enabled:
             return DisabledExecutor()
             
-        if config.executor_type == "LOCAL_TRUSTED":
+        executor_type = config.executor_type.upper() if config.executor_type else "DISABLED"
+        if executor_type == "LOCAL_TRUSTED":
             return LocalTrustedExecutor()
-        elif config.executor_type == "DOCKER":
+        elif executor_type == "DOCKER":
             image = config.docker_image or "python:3.12-slim"
             return DockerTestExecutor(docker_image=image)
         else:
@@ -37,12 +38,12 @@ class TestExecutionService:
             
     async def execute_tests(self, db: Session, analysis_run_id: int, repo_path: str, base_sha: str, head_sha: str) -> Optional[TestRun]:
         # Load AnalysisRun
-        analysis_run = self.analysis_store.get_analysis_run(db, analysis_run_id)
+        analysis_run = db.query(AnalysisRun).filter_by(id=analysis_run_id).first()
         if not analysis_run:
             logger.error(f"AnalysisRun {analysis_run_id} not found.")
             return None
             
-        repo_id = analysis_run.repository_id
+        repo_id = analysis_run.pull_request.repository_id
         
         # Load Config
         config = self.testing_store.get_test_configuration(db, repo_id)
@@ -72,9 +73,21 @@ class TestExecutionService:
         # Prepare safe isolated workspace
         workspace_dir = tempfile.mkdtemp(prefix=f"codegate_tests_{analysis_run_id}_")
         try:
-            # In a real app we'd copy the repo_path safely or use git worktree
-            # Here we just use the repo_path as the base since we are mocking the clone step
-            working_directory = repo_path
+            # Clone and checkout
+            analysis_run = self.analysis_store.get_by_id(db, analysis_run_id)
+            repo_full_name = analysis_run.pull_request.repository.full_name
+            clone_url = f"https://github.com/{repo_full_name}.git"
+            
+            import subprocess
+            try:
+                subprocess.run(["git", "clone", clone_url, workspace_dir], check=True, capture_output=True)
+                if head_sha:
+                    subprocess.run(["git", "checkout", head_sha], cwd=workspace_dir, check=True, capture_output=True)
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Failed to clone {clone_url} for run {analysis_run_id}: {e.stderr}")
+                raise
+
+            working_directory = workspace_dir
             if config.working_directory:
                 working_directory = os.path.join(working_directory, config.working_directory)
                 
@@ -92,7 +105,10 @@ class TestExecutionService:
                 test_paths=test_paths,
                 pytest_args=pytest_args,
                 timeout_seconds=config.timeout_seconds,
-                coverage_enabled=config.coverage_enabled
+                coverage_enabled=config.coverage_enabled,
+                install_command=config.install_command,
+                test_command=config.test_command,
+                network_enabled=config.network_enabled
             )
             
             # Process Changed Code Coverage

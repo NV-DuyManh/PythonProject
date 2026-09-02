@@ -12,7 +12,7 @@ export const ScoreCard: React.FC<ScoreCardProps> = ({ title, score, label, isRis
     return (
       <div className="p-4 rounded-lg bg-[#1a1b1e] border border-gray-800 text-gray-400">
         <h3 className="text-sm font-medium mb-2 uppercase">{title}</h3>
-        <p className="text-lg">Not available</p>
+        <p className="text-lg">N/A</p>
       </div>
     );
   }

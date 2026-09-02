@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import List, Optional
 
@@ -282,7 +283,7 @@ class DashboardService:
                     item.test_outcome = test.test_outcome
                     cov = db.scalar(select(CoverageReport).where(CoverageReport.test_run_id == test.id))
                     if cov:
-                        item.changed_line_coverage = cov.changed_line_coverage
+                        item.changed_line_coverage = cov.changed_line_coverage if cov.changed_line_coverage is not None else cov.line_coverage
                         
                 # Count findings
                 item.critical_findings = db.scalar(select(func.count(Finding.id)).where(Finding.analysis_run_id == ar.id, Finding.severity == "CRITICAL")) or 0
@@ -354,31 +355,36 @@ class DashboardService:
         # Compile detail components
         q_comp = None
         if quality:
+            q_parsed = quality.breakdown_json if isinstance(quality.breakdown_json, dict) else (json.loads(quality.breakdown_json) if quality.breakdown_json else {})
+            q_comps = [{"category": c.get("name", ""), "score": c.get("score"), "weight": c.get("canonical_weight")} for c in q_parsed.get("components", [])]
             q_comp = QualityDetailComponent(
                 overall_score=quality.overall_score,
                 grade=quality.grade,
                 is_complete=quality.is_complete,
                 available_weight=quality.available_weight,
                 missing_dimensions=quality.missing_dimensions,
-                components=quality.breakdown_json,
-                breakdown=quality.breakdown_json
+                components=q_comps,
+                breakdown=q_parsed
             )
             
         r_comp = None
         if risk:
+            r_parsed = risk.breakdown_json if isinstance(risk.breakdown_json, dict) else (json.loads(risk.breakdown_json) if risk.breakdown_json else {})
+            r_comps = [{"category": c.get("name", ""), "score": c.get("risk")} for c in r_parsed.get("components", [])]
             r_comp = RiskDetailComponent(
                 overall_risk=risk.overall_risk,
                 risk_level=risk.risk_level,
                 is_complete=risk.is_complete,
                 available_weight=risk.available_weight,
                 missing_dimensions=risk.missing_dimensions,
-                components=risk.breakdown_json,
-                flags=risk.breakdown_json,
-                breakdown=risk.breakdown_json
+                components=r_comps,
+                flags=r_parsed.get("flags", []),
+                breakdown=r_parsed
             )
             
         p_comp = None
         if policy:
+            p_parsed = policy.breakdown_json if isinstance(policy.breakdown_json, dict) else (json.loads(policy.breakdown_json) if policy.breakdown_json else {})
             p_comp = PolicyDetailComponent(
                 decision=getattr(policy.decision, 'value', policy.decision) if policy.decision else "",
                 policy_revision=policy.policy_revision,
@@ -386,8 +392,9 @@ class DashboardService:
                 passed_rules=policy.passed_rules_count or 0,
                 warning_rules=policy.warning_rules_count or 0,
                 blocked_rules=policy.blocked_rules_count or 0,
-                flags=policy.flags_json,
-                breakdown=policy.breakdown_json
+                flags=policy.flags_json if isinstance(policy.flags_json, list) else (json.loads(policy.flags_json) if policy.flags_json else []),
+                breakdown=p_parsed,
+                reasons=p_parsed.get("reasons", [])
             )
             
         t_comp = None
@@ -408,31 +415,43 @@ class DashboardService:
             c_comp = CoverageDetailComponent(
                 line_coverage=cov.line_coverage,
                 branch_coverage=cov.branch_coverage,
-                changed_line_coverage=cov.changed_line_coverage,
-                changed_total_lines=cov.changed_total_lines,
-                changed_covered_lines=cov.changed_covered_lines,
-                changed_missing_lines=cov.changed_missing_lines,
+                changed_line_coverage=cov.changed_line_coverage if cov.changed_line_coverage is not None else cov.line_coverage,
+                changed_total_lines=cov.changed_total_lines if cov.changed_total_lines > 0 else cov.total_lines,
+                changed_covered_lines=cov.changed_covered_lines if cov.changed_total_lines > 0 else cov.covered_lines,
+                changed_missing_lines=cov.changed_missing_lines if cov.changed_total_lines > 0 else cov.missing_lines,
                 is_complete=cov.is_complete
             )
             
         # Findings
-        f_total = db.scalar(select(func.count(Finding.id)).where(Finding.analysis_run_id == ar.id)) or 0
-        f_crit = db.scalar(select(func.count(Finding.id)).where(Finding.analysis_run_id == ar.id, Finding.severity == "CRITICAL")) or 0
-        f_high = db.scalar(select(func.count(Finding.id)).where(Finding.analysis_run_id == ar.id, Finding.severity == "HIGH")) or 0
-        f_med = db.scalar(select(func.count(Finding.id)).where(Finding.analysis_run_id == ar.id, Finding.severity == "MEDIUM")) or 0
-        f_low = db.scalar(select(func.count(Finding.id)).where(Finding.analysis_run_id == ar.id, Finding.severity == "LOW")) or 0
-        f_info = db.scalar(select(func.count(Finding.id)).where(Finding.analysis_run_id == ar.id, Finding.severity == "INFO")) or 0
+        findings_query = db.execute(select(Finding).where(Finding.analysis_run_id == ar.id)).scalars().all()
+        f_list = [
+            {
+                "id": f.id,
+                "severity": getattr(f.severity, 'value', f.severity),
+                "title": f.title,
+                "category": f.category,
+                "file_path": f.file_path,
+                "line_number": f.start_line
+            } for f in findings_query
+        ]
         
-        f_comp = FindingsDetailComponent(
-            total=f_total,
-            critical=f_crit,
-            high=f_high,
-            medium=f_med,
-            low=f_low,
-            info=f_info,
-            by_category={}, # Unimplemented grouping
-            top_findings=[] # Unimplemented fetch
-        )
+        # Reviewers
+        r_list = []
+        try:
+            from codegate.database.models import ReviewerRecommendation, ReviewerRecommendationCandidate
+            recs = db.execute(select(ReviewerRecommendation).where(ReviewerRecommendation.analysis_run_id == ar.id)).scalars().all()
+            if recs:
+                rec_id = recs[-1].id
+                candidates = db.execute(select(ReviewerRecommendationCandidate).where(ReviewerRecommendationCandidate.recommendation_id == rec_id)).scalars().all()
+                r_list = [
+                    {
+                        "reviewer_username": c.provider_username,
+                        "reasons": c.reasons_json if isinstance(c.reasons_json, list) else (json.loads(c.reasons_json) if c.reasons_json else []),
+                        "match_score": c.overall_score
+                    } for c in candidates
+                ]
+        except ImportError:
+            pass
             
         return PullRequestDashboardDetail(
             pr=pr_comp,
@@ -447,8 +466,8 @@ class DashboardService:
             policy=p_comp,
             tests=t_comp,
             coverage=c_comp,
-            findings=f_comp,
-            reviewer_recommendation=None
+            findings=f_list,
+            reviewer_recommendation=r_list
         )
 
 dashboard_service = DashboardService()

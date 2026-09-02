@@ -41,6 +41,9 @@ class CoverageParser:
                 if num_b > 0:
                     metrics.branch_coverage = (covered_b / num_b) * 100
                     
+            if "files" in data:
+                metrics.files = data["files"]
+                    
             return metrics
             
         except json.JSONDecodeError as e:

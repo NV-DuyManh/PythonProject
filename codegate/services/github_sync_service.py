@@ -89,6 +89,7 @@ class GithubSyncService:
         # Head branch is sometimes tricky, let's grab it from the provider if possible
         source_branch = getattr(pr_obj.head, "ref", "") if hasattr(pr_obj, "head") else ""
         head_sha = getattr(pr_obj.head, "sha", "") if hasattr(pr_obj, "head") else ""
+        base_sha = getattr(pr_obj.base, "sha", "") if hasattr(pr_obj, "base") else ""
         
         state = getattr(pr_obj, "state", "OPEN").upper()
         if getattr(pr_obj, "merged", False):
@@ -110,6 +111,7 @@ class GithubSyncService:
             pull_request.description = description
             pull_request.state = state
             pull_request.head_sha = head_sha
+            pull_request.base_sha = base_sha
             pull_request.changed_files = changed_files_count
             self.db.commit()
             self.db.refresh(pull_request)
@@ -126,6 +128,7 @@ class GithubSyncService:
                 state=state,
                 changed_files=changed_files_count,
                 head_sha=head_sha,
+                base_sha=base_sha,
                 provider_created_at=getattr(pr_obj, "created_at", None),
                 provider_updated_at=getattr(pr_obj, "updated_at", None),
             )

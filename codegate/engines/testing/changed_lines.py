@@ -96,12 +96,15 @@ class ChangedLinesResolver:
         for file_path, lines_set in changed_lines.items():
             if file_path in coverage_metrics.files:
                 file_cov = coverage_metrics.files[file_path]
+                executed = set(file_cov.get("executed_lines", []))
+                missing = set(file_cov.get("missing_lines", []))
+                
                 for line in lines_set:
-                    # check if line is executable in coverage
-                    if line in file_cov.lines:
+                    if line in executed:
                         total += 1
-                        if file_cov.lines[line] > 0:
-                            covered += 1
+                        covered += 1
+                    elif line in missing:
+                        total += 1
                             
         percentage = (covered / total * 100) if total > 0 else 0.0
         return covered, total, percentage

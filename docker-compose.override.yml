@@ -2,3 +2,9 @@ services:
   postgres:
     ports:
       - "15432:5432"
+  smee:
+    image: node:20-alpine
+    command: npx smee-client -u https://smee.io/4OjZJDKsq99xrOnh -t http://backend:8000/api/v1/github_webhooks
+    restart: always
+    depends_on:
+      - backend

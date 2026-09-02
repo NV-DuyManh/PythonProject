@@ -13,7 +13,8 @@ class TestExecutor(ABC):
                       command: List[str], 
                       working_directory: str, 
                       env: Optional[Dict[str, str]] = None,
-                      timeout_seconds: int = 900) -> Tuple[int, str, str, bool]:
+                      timeout_seconds: int = 900,
+                      network_enabled: bool = False) -> Tuple[int, str, str, bool]:
         """
         Executes the given command safely.
         Returns:
@@ -29,7 +30,8 @@ class DisabledExecutor(TestExecutor):
                       command: List[str], 
                       working_directory: str, 
                       env: Optional[Dict[str, str]] = None,
-                      timeout_seconds: int = 900) -> Tuple[int, str, str, bool]:
+                      timeout_seconds: int = 900,
+                      network_enabled: bool = False) -> Tuple[int, str, str, bool]:
         return -1, "Test execution is DISABLED by policy.", "", False
 
 
@@ -57,8 +59,8 @@ class LocalTrustedExecutor(TestExecutor):
         if ".." in working_directory:
             return False
             
-        # Reject absolute paths (Linux/macOS)
-        if working_directory.startswith("/"):
+        # Reject absolute paths (Linux/macOS) unless it's the expected temp workspace
+        if working_directory.startswith("/") and not working_directory.startswith("/tmp/codegate_tests_"):
             return False
             
         # Reject Windows drive escapes (e.g. C:\)
@@ -75,7 +77,8 @@ class LocalTrustedExecutor(TestExecutor):
                       command: List[str], 
                       working_directory: str, 
                       env: Optional[Dict[str, str]] = None,
-                      timeout_seconds: int = 900) -> Tuple[int, str, str, bool]:
+                      timeout_seconds: int = 900,
+                      network_enabled: bool = False) -> Tuple[int, str, str, bool]:
         
         if not self._validate_path(working_directory):
             return -1, "", "Path traversal detected in working directory.", False
@@ -130,12 +133,16 @@ class DockerTestExecutor(TestExecutor):
                       command: List[str], 
                       working_directory: str, 
                       env: Optional[Dict[str, str]] = None,
-                      timeout_seconds: int = 900) -> Tuple[int, str, str, bool]:
+                      timeout_seconds: int = 900,
+                      network_enabled: bool = False) -> Tuple[int, str, str, bool]:
         # Implement safe docker run building
+        network_flag = "bridge" if network_enabled else "none"
         docker_cmd = [
             "docker", "run", 
             "--rm", 
-            "--network", "none", # strict isolation
+            "--memory=1g",
+            "--cpus=1.0",
+            "--network", network_flag,
             "-v", f"{working_directory}:/workspace",
             "-w", "/workspace",
             self.docker_image

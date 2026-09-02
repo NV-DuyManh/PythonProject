@@ -9,9 +9,9 @@ describe('utils', () => {
       expect(formatPercentage(0)).toBe('0.0%');
     });
 
-    it('handles null/undefined gracefully', () => {
-      expect(formatPercentage(null)).toBe('Not available');
-      expect(formatPercentage(undefined)).toBe('Not available');
+    it('handles null and undefined', () => {
+      expect(formatPercentage(null)).toBe('N/A');
+      expect(formatPercentage(undefined)).toBe('N/A');
     });
   });
 

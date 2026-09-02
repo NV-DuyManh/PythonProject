@@ -27,6 +27,10 @@ class TestConfiguration(Base):
     test_paths_json: Mapped[str] = mapped_column(JSONType, nullable=True)
     pytest_args_json: Mapped[str] = mapped_column(JSONType, nullable=True)
     
+    install_command: Mapped[str] = mapped_column(String(500), nullable=True)
+    test_command: Mapped[str] = mapped_column(String(500), nullable=True)
+    network_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    
     timeout_seconds: Mapped[int] = mapped_column(Integer, nullable=False, default=900)
     coverage_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     coverage_source_json: Mapped[str] = mapped_column(JSONType, nullable=True)
