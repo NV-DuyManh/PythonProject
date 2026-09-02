@@ -163,4 +163,4 @@ class DockerTestExecutor(TestExecutor):
             process.kill()
             return -1, "", f"Docker execution timed out after {timeout_seconds} seconds.", True
             
-        return process.returncode or -1, stdout_bytes.decode('utf-8', errors='replace'), stderr_bytes.decode('utf-8', errors='replace'), is_timeout
+        return process.returncode if process.returncode is not None else -1, stdout_bytes.decode('utf-8', errors='replace'), stderr_bytes.decode('utf-8', errors='replace'), is_timeout

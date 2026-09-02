@@ -35,7 +35,7 @@ CodeGate is a local, privacy-first Pull Request quality platform that augments P
 When a developer opens a Pull Request on GitHub, CodeGate intercepts the webhook and runs an asynchronous pipeline. Beyond the standard PR-Agent AI code review, CodeGate downloads the code into an isolated Docker container, executes static analyzers (Ruff, Bandit, Radon), runs the repository's test suite, and measures code coverage. It then aggregates these metrics into deterministic Quality and Risk scores, enforces merge policies, and displays the full report on a local React dashboard and as a GitHub Check Run.
 
 **C. Detailed technical description:**
-CodeGate operates as a self-hosted GitHub App integration. It uses FastAPI for the backend, PostgreSQL for data persistence, Redis for state, and Celery for async job processing. The core pipeline (`analysis_orchestrator.py`) orchestrates multiple engines: AI (via PR-Agent), Static Analysis (subprocess execution), Testing (Docker-in-Docker `pytest` execution), Quality Scoring, Risk Scoring, and Policy Evaluation. It provides a multi-tenant RBAC system and a unified local React dashboard to review the aggregated health of PRs before they are merged.
+CodeGate operates as a self-hosted GitHub App integration. It uses FastAPI for the backend, PostgreSQL for data persistence, Redis for state, and Celery for async job processing. The core pipeline (`analysis_orchestrator.py`) orchestrates multiple engines: AI (via PR-Agent), Static Analysis (subprocess execution), Testing (Docker-outside-of-Docker / host Docker daemon access through mounted socket `pytest` execution), Quality Scoring, Risk Scoring, and Policy Evaluation. It provides a multi-tenant RBAC system and a unified local React dashboard to review the aggregated health of PRs before they are merged.
 
 ## 3. CURRENT PRODUCT SCOPE
 
@@ -64,7 +64,7 @@ CodeGate operates as a self-hosted GitHub App integration. It uses FastAPI for t
 - **`codegate/`**: The main CodeGate backend application.
   - `api/`: FastAPI routes (`routers/`) and Pydantic schemas (`schemas/`).
   - `database/`: SQLAlchemy models (`models/`) and connection setup.
-  - `engines/`: The core logic engines (`testing/`, `analyzers/`, `scoring/`, `quality/`, `risk/`).
+  - `engines/`: The core logic engines (`analyzers/`, `policy/`, `quality/`, `reviewer/`, `risk/`, `testing/`).
   - `services/`: Business logic orchestrators (`analysis_orchestrator.py`, `github_sync_service.py`).
 - **`dashboard/`**: React frontend.
   - `src/pages/`: UI views (Overview, PullRequests, Repositories).
@@ -101,7 +101,7 @@ graph TD
 
 ## 6. RUNTIME COMPONENTS
 
-- **postgres**: PostgreSQL 15, Port 5432. Stores all persistent data. One-shot `migrate` runs Alembic upgrades.
+- **postgres**: PostgreSQL 16, Port 5432. Stores all persistent data. One-shot `migrate` runs Alembic upgrades.
 - **redis**: Redis 7, Port 6379. Used as Celery broker and result backend.
 - **backend**: FastAPI (Python), Port 8000. Core API server. Depends on Postgres/Redis.
 - **worker**: Celery (Python). Processes PR analysis tasks asynchronously.
@@ -261,7 +261,7 @@ Handled by `sync_repositories`. Paginates through the GitHub API using the insta
 
 **FILE:** `codegate/database/models/testing.py`
 `TestConfiguration` controls the Docker executor.
-Fields: `enabled`, `docker_image`, `install_command`, `test_command`, `working_directory`, `environment_variables`, `timeout_seconds`.
+Fields: `enabled`, `framework`, `executor_type`, `working_directory`, `test_paths_json`, `pytest_args_json`, `install_command`, `test_command`, `network_enabled`, `timeout_seconds`, `coverage_enabled`, `coverage_source_json`, `docker_image`.
 Default: Disabled. Requires MAINTAINER role to update.
 
 ## 25. GITHUB WEBHOOK SECURITY
@@ -345,11 +345,11 @@ Analyzers run as non-shell subprocesses (`subprocess.run(["ruff", ...])`) within
 ## 37. DOCKER TEST ISOLATION
 
 **FILE:** `codegate/engines/testing/executor.py`
-`DockerTestExecutor` uses `docker` python client:
-- Limits memory (e.g. `mem_limit="1g"`).
-- Disables network (`network_mode="none"`) unless configured otherwise.
-- Drops capabilities (`cap_drop=["ALL"]`).
-- Mounts code as read-only (except for coverage output dirs).
+`DockerTestExecutor` uses Docker CLI via `asyncio.create_subprocess_exec`:
+- Limits memory (e.g. `--memory=1g`).
+- Disables network (`--network none`) unless configured otherwise.
+- No capabilities drop currently enforced by default in code.
+- Mounts code as read-write.
 - Runs command via `sh -c` inside the isolated container.
 
 ## 38. EXACT SHA TEST EXECUTION
@@ -424,7 +424,7 @@ A PR can be high Quality (100% coverage, A grade) but high Risk (touches critica
 
 ## 47. QUALITY POLICY / MERGE GATE
 
-**FILE:** `codegate/engines/scoring/policy.py`
+**FILE:** `codegate/engines/policy/engine.py`
 Policies define thresholds (e.g., `fail_if_quality_below_C`, `block_if_critical_security_findings`).
 Precedence: BLOCK > WARNING > PASS.
 
@@ -437,7 +437,7 @@ Mapped dynamically:
 
 ## 49. REVIEWER RECOMMENDATION
 
-**FILE:** `codegate/engines/reviewers/reviewer_engine.py`
+**FILE:** `codegate/engines/reviewer/engine.py`
 Scores potential reviewers based on:
 1. `CODEOWNERS` exact matches.
 2. Recency of commits to the modified files.
@@ -526,8 +526,8 @@ The frontend is built statically into a `dist/` folder and served. Rebuilding re
 ## 66. TEST INVENTORY
 
 - **Backend (codegate):** 156 collected, 151 passed, 5 skipped.
-- **Frontend (dashboard):** 41 collected, 38 passed, 3 failed.
-- **Launcher:** 4 collected, 1 passed, 3 failed.
+- **Frontend (dashboard):** 41 collected, 41 passed, 0 failed.
+- **Launcher:** 4 collected, 4 passed, 0 failed.
 - **Upstream (pr-agent):** ~2400 tests.
 
 ## 67. TEST COVERAGE BY SUBSYSTEM
@@ -553,7 +553,8 @@ Tests run against SQLite in memory (`test_database.py`) by default for speed.
 
 ## 71. REAL GITHUB ACCEPTANCE
 
-**REAL VERIFIED:** GitHub OAuth, App Installation, Repository Sync, PR Webhook handling, GitHub Check Run publishing, Testing Coverage parsing (PR #28, #30).
+**REAL GITHUB VERIFIED:** GitHub OAuth, App Installation, Repository Sync, PR Webhook handling, GitHub Check Run publishing (PR #28, #30).
+**PRODUCT MODE VERIFIED:** Testing Coverage parsing.
 **SIMULATED:** GitLab flows.
 
 ## 72. CURRENT KNOWN ISSUES
@@ -578,13 +579,19 @@ PostgreSQL and Redis use named Docker volumes (`codegate_db_data`, `codegate_red
 
 ## 77. SECURITY REVIEW
 
-- **Tenant IDOR:** 100% Mitigated via strict `active_workspace_id` verification.
+- **Tenant IDOR:** Tenant isolation is centrally enforced and covered by automated IDOR tests.
 - **Webhook Spoofing:** Mitigated via `X-Hub-Signature-256`.
-- **Test Sandbox:** High risk. `DockerTestExecutor` limits capabilities, but Docker-in-Docker always carries escape risks. Acceptable ONLY for local use.
+- **Test Sandbox:** Docker test isolation reduces risk but is not equivalent to a VM boundary. The worker's Docker socket access gives the worker strong control over the local Docker daemon and is acceptable only within the current trusted local product model.
+
+worker socket:
+MOUNTED
+
+test container socket:
+NOT MOUNTED
 
 ## 78. PERFORMANCE / SCALABILITY
 
-Local performance is exceptional. Bottlenecks are strictly Docker container spin-up times during test execution and Groq AI network latency.
+Local performance is generally bounded by Docker container spin-up times during test execution and upstream AI network latency.
 
 ## 79. LOCAL PRODUCT LIMITS
 
@@ -600,7 +607,7 @@ Dashboard navigation, RBAC, history viewing, static analysis, policy evaluation.
 - `FastAPI`: API server.
 - `SQLAlchemy`: ORM.
 - `Celery`: Async queue.
-- `docker`: Python client for spawning test containers.
+- `docker`: Docker CLI tool required on host/worker for spawning test containers.
 - `React/Vite`: Frontend.
 - `TailwindCSS`: Styling.
 
@@ -644,22 +651,22 @@ If `worker crashes`: Job remains `RUNNING` in DB indefinitely until manually res
 
 ## 89. CURRENT PRODUCT MATURITY
 
-Architecture: 9/10
-Security (Tenant): 10/10
-Security (Sandbox): 6/10
-Testing/Coverage: 9/10
-Frontend: 8/10
-Reliability: 8/10
+Architecture: EXCELLENT
+Security (Tenant): EXCELLENT
+Security (Sandbox): ADEQUATE FOR LOCAL
+Testing/Coverage: EXCELLENT
+Frontend: GOOD
+Reliability: GOOD
 
 ## 90. STRONGEST PARTS
 
-1. Absolute iron-clad multi-tenant IDOR protection.
+1. Centralized multi-tenant IDOR protection.
 2. Completely deterministic Risk/Quality scoring engines.
 3. Seamless integration of upstream PR-Agent inside a full-stack wrapper.
 
 ## 91. WEAKEST PARTS
 
-1. Docker-in-Docker test execution is inherently risky on shared machines.
+1. The worker requires host Docker daemon access through a mounted Docker socket, which creates a strong local trust boundary.
 2. Analytics dashboard lacks deep charting.
 3. No automated backup/restore UI.
 
@@ -682,7 +689,7 @@ A: Every resource recursively belongs to a `Workspace`. FastAPI dependencies dyn
 | FastAPI Platform | NO | YES | `codegate/api/` |
 | PostgreSQL Persistence | NO | YES | `codegate/database/` |
 | Celery/Redis Async | NO | YES | `codegate/worker/` |
-| Workspace / RBAC | NO | YES | `codegate/auth/` |
+| Workspace / RBAC | NO | YES | `codegate/auth/`, `codegate/api/dependencies.py`, `codegate/database/models/auth.py` |
 | GitHub App Onboarding | NO | YES | `codegate/services/github_sync_service.py` |
 | Webhook Pipeline | NO | YES | `codegate/api/routers/webhooks.py` |
 | Static Analysis | NO | YES | `codegate/engines/analyzers/` |
@@ -690,8 +697,8 @@ A: Every resource recursively belongs to a `Workspace`. FastAPI dependencies dyn
 | Coverage parsing | NO | YES | `codegate/engines/testing/coverage_parser.py` |
 | Quality Score Engine | NO | YES | `codegate/engines/quality/` |
 | Risk Score Engine | NO | YES | `codegate/engines/risk/` |
-| Policy Evaluation | NO | YES | `codegate/engines/scoring/policy.py` |
-| Reviewer Recommendation | NO | YES | `codegate/engines/reviewers/reviewer_engine.py` |
+| Policy Evaluation | NO | YES | `codegate/engines/policy/engine.py` |
+| Reviewer Recommendation | NO | YES | `codegate/engines/reviewer/engine.py` |
 | React Dashboard | NO | YES | `dashboard/` |
 | Local Launcher GUI | NO | YES | `tools/codegate_launcher/launcher.py` |
 
@@ -701,8 +708,8 @@ A: Every resource recursively belongs to a `Workspace`. FastAPI dependencies dyn
 |---|---|---|---|
 | Webhooks | YES | YES | YES |
 | PR Scoring | YES | YES | YES |
-| Test Coverage | YES | YES | YES |
-| Dashboard UI | YES | YES (vitest) | YES |
+| Test Coverage | YES | YES | PRODUCT MODE VERIFIED |
+| Dashboard UI | YES | YES (vitest) | N/A |
 
 ## 96. CURRENT TECHNICAL DEBT
 
@@ -750,93 +757,83 @@ DATABASE: PostgreSQL
 QUEUE: Celery / Redis
 CURRENT ALEMBIC HEAD: `e1f832676b73`
 
-## 103. CODEGATE — MASTER AUDIT RECONCILIATION
+## 103. CODEGATE — MASTER AUDIT FINAL RECONCILIATION
 
-LICENSE:
-MIT
+RUNTIME STABILITY:
+PASS
 
-LAUNCHER GUI:
-tkinter
-
-NORMAL START COMMAND:
-`docker compose -f compose.codegate.yml -p codegate up -d --build`
-
-FORCE REBUILD:
-`docker compose -f compose.codegate.yml -p codegate build --no-cache`
-
-QUALITY VERSION:
-`quality-v1`
-
-QUALITY WEIGHTS:
-code_quality = 0.25, security = 0.20, testing = 0.20, complexity = 0.15, maintainability = 0.10, ai_review = 0.10
-
-QUALITY GRADES:
-A: >=90, B: >=80, C: >=70, D: >=60, F: <60
-
-RISK VERSION:
-`risk-v1`
-
-RISK WEIGHTS:
-security = 0.40, change_surface = 0.25, sensitive_path = 0.20, complexity = 0.15
-
-RISK LEVELS:
-LOW < 20, MEDIUM < 40, HIGH < 70, CRITICAL >= 70
-
-ZERO EXECUTABLE CHANGED LINES:
-Coverage yields `None`, UI shows `N/A`.
-
-HOST PYTHON:
-`3.14.6`
-
-BACKEND PYTHON:
-`3.12.14-slim`
-
-WORKER PYTHON:
-`3.12.14-slim`
-
-SUPPORTED PYTHON:
-`>=3.12`
-
-ALEMBIC HEAD:
-`e1f832676b73`
-
-BACKEND TESTS:
+BACKEND:
 COLLECTED: 156
 PASSED: 151
 FAILED: 0
 SKIPPED: 5
 
-FRONTEND TESTS:
+FRONTEND:
 COLLECTED: 41
-PASSED: 38
-FAILED: 3
+PASSED: 41
+FAILED: 0
 
-README PRIMARY IDENTITY:
-CODEGATE
+LAUNCHER:
+COLLECTED: 4
+PASSED: 4
+FAILED: 0
 
-UPSTREAM ATTRIBUTION:
-CLEAR
+POSTGRES:
+16
 
-CODEGATE ORIGINAL CONTRIBUTIONS:
-CLEAR
+DOCKER EXECUTOR:
+DOCKER CLI
 
-REAL GITHUB VERIFIED FLOWS:
-OAuth, GitHub App install, repo sync, PR webhook, GitHub Check, test passing PR, test failing PR, coverage parsing.
+WORKER DOCKER SOCKET:
+MOUNTED
 
-SIMULATED FLOWS:
-GitLab webhooks.
+TEST CONTAINER DOCKER SOCKET:
+NOT MOUNTED
 
-USER CONFIRMATION REQUIRED:
-Deep Analytics chart correctness.
+WORKSPACE MOUNT:
+READ-WRITE
+
+DEFAULT TEST NETWORK:
+NONE
+
+TEST CONTAINER PRIVILEGED:
+NO
+
+CAP DROP DEFAULT:
+NO
+
+NO-NEW-PRIVILEGES DEFAULT:
+NO
+
+RETURN CODE FIX:
+PASS
+
+PRODUCT MODE TEST PASS:
+PASS
+
+PRODUCT MODE TEST FAIL:
+PASS
+
+TESTRUN:
+PASS
+
+COVERAGE REPORT:
+PASS
+
+INVALID SOURCE PATHS:
+0
+
+STALE TEST COUNTS:
+0
+
+SECURITY ABSOLUTE CLAIMS:
+0
+
+REAL GITHUB CLAIMS VERIFIED AGAINST EVIDENCE:
+YES
 
 BACKUP/RESTORE:
 NOT IMPLEMENTED
 
-MOST IMPORTANT PRODUCT GAP:
-Docker socket requirement makes cloud testing insecure.
-
-MOST IMPORTANT DEFENSE/PRESENTATION GAP:
-Need manual retry button in UI.
-
-AUDIT SOURCE-OF-TRUTH STATUS:
+MASTER AUDIT SOURCE-OF-TRUTH:
 PASS

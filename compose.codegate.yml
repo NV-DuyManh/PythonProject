@@ -82,6 +82,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.codegate_backend
+    user: root
     restart: unless-stopped
     command: ["celery", "-A", "codegate.worker.celery_app", "worker", "-l", "info", "--concurrency=2"]
     environment:
@@ -97,6 +98,7 @@ services:
       - GITHUB_APP_INSTALLATION_ID=${GITHUB_APP_INSTALLATION_ID}
       - GITHUB_APP_PRIVATE_KEY_PATH=${GITHUB_APP_PRIVATE_KEY_PATH}
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - type: bind
         source: ./secrets/github-app-key.pem
         target: /run/secrets/github-app-key.pem

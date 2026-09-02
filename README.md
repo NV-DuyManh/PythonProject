@@ -9,9 +9,9 @@ CodeGate is a comprehensive Pull Request Quality Intelligence Platform that anal
 
 **WARNING:** Both methods use ports `8000` (Backend) and `5173` (Frontend). Do not run both methods simultaneously.
 
-### Path A: Windows Local (SQLite)
+### Path A: Windows Local (Docker/PostgreSQL)
 1. Double-click `CodeGateLauncher.exe` in the project root.
-2. Click **START CODEGATE**.
+2. Click **START CODEGATE** (This runs `docker compose up -d --build`).
 3. Browser automatically opens: http://127.0.0.1:5173
 
 ### Path B: Docker Production (PostgreSQL)
@@ -30,7 +30,7 @@ CodeGate solves the problem of subjective, inconsistent pull request reviews by 
 - **Merge Policy Engine:** Blocks, warns, or passes based on strict evidence.
 - **Reviewer Recommendations:** Based on CODEOWNERS and expertise.
 - **Full Dashboard:** React/Vite SPA.
-- **Database:** PostgreSQL 16 (production) or SQLite (local rapid dev).
+- **Database:** PostgreSQL 16 (production) or SQLite (testing only).
 - **LLM:** Powered by Groq (Primary: `groq/openai/gpt-oss-120b`).
 
 ## 🛡️ CI/CD & Security
@@ -39,7 +39,7 @@ CodeGate guarantees safe operations via a hardened GitHub Actions pipeline (`cod
 - **Dependency Auditing:** `pip-audit`, `npm audit`
 - **Secret Scanning:** `gitleaks-action` blocks `.env`, `*.pem`, and keys.
 - **Static Security:** `bandit` AST scanning for Python vulnerabilities.
-- **Regression Tests:** 89/89 Backend tests and 17/17 Frontend tests pass safely.
+- **Regression Tests:** 151/151 Backend tests and 41/41 Frontend tests pass safely.
 - **API Security:** Nginx HTTP security headers, CORS restrictions, and robust error masking.
 
 *Read the [Full Security Policy](docs/SECURITY.md).*

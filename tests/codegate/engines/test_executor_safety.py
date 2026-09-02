@@ -1,6 +1,7 @@
 import pytest
 import asyncio
-from codegate.engines.testing.executor import LocalTrustedExecutor, DisabledExecutor
+from unittest.mock import AsyncMock, patch, MagicMock
+from codegate.engines.testing.executor import LocalTrustedExecutor, DisabledExecutor, DockerTestExecutor
 
 @pytest.mark.asyncio
 async def test_disabled_executor_returns_error():
@@ -46,3 +47,41 @@ async def test_local_executor_timeout():
     assert code == -1
     assert is_timeout
     assert "Execution timed out" in stderr
+
+@pytest.mark.asyncio
+async def test_docker_executor_preserves_zero_exit_code():
+    executor = DockerTestExecutor("test:latest")
+    
+    mock_process = MagicMock()
+    mock_process.returncode = 0
+    
+    # Wait_for mock to just return empty bytes
+    async def mock_communicate():
+        return b"out", b"err"
+    mock_process.communicate = mock_communicate
+    
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_create:
+        mock_create.return_value = mock_process
+        code, out, err, is_timeout = await executor.execute(["ls"], ".")
+        
+        assert code == 0
+        assert out == "out"
+        assert err == "err"
+        assert not is_timeout
+
+@pytest.mark.asyncio
+async def test_docker_executor_preserves_nonzero_exit_code():
+    executor = DockerTestExecutor("test:latest")
+    
+    mock_process = MagicMock()
+    mock_process.returncode = 127
+    
+    async def mock_communicate():
+        return b"out", b"err"
+    mock_process.communicate = mock_communicate
+    
+    with patch("asyncio.create_subprocess_exec", new_callable=AsyncMock) as mock_create:
+        mock_create.return_value = mock_process
+        code, out, err, is_timeout = await executor.execute(["fail"], ".")
+        
+        assert code == 127
