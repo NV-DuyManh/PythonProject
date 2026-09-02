@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { DashboardOverviewResponse } from '../types';
+import { CodeGateAPI } from '../api/client';
 import {
   ShieldCheck,
   AlertTriangle,
@@ -31,24 +32,12 @@ export function Overview() {
 
     let cancelled = false;
 
-    const fetchOverview = async (retries = 3, delay = 800) => {
+    const fetchOverview = async (retries = 3, delay = import.meta.env.MODE === 'test' ? 0 : 800) => {
       setLoading(true);
       setError(null);
       for (let attempt = 0; attempt < retries; attempt++) {
         try {
-          const res = await fetch(
-            `${import.meta.env.VITE_CODEGATE_API_URL || 'http://127.0.0.1:8000/api/v1'}/dashboard/overview`,
-            { credentials: 'include' }
-          );
-          if (!res.ok) {
-            if (res.status === 401 && attempt < retries - 1) {
-              // Session cookie might not be ready yet after OAuth redirect
-              await new Promise(r => setTimeout(r, delay));
-              continue;
-            }
-            throw new Error('Failed to fetch overview');
-          }
-          const overview = await res.json();
+          const overview = await CodeGateAPI.getOverview();
           if (!cancelled) {
             setData(overview);
             setError(null);

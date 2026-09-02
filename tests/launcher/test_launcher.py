@@ -64,6 +64,8 @@ def test_status_logic_ready(mock_tk):
     launcher.btn_stop = MagicMock()
     launcher.btn_restart = MagicMock()
     launcher.btn_open = MagicMock()
+    launcher.btn_force_rebuild = MagicMock()
+    launcher.btn_logs = MagicMock()
     
     launcher._update_ui_state()
     
@@ -88,6 +90,8 @@ def test_status_logic_degraded(mock_tk):
     launcher.btn_stop = MagicMock()
     launcher.btn_restart = MagicMock()
     launcher.btn_open = MagicMock()
+    launcher.btn_force_rebuild = MagicMock()
+    launcher.btn_logs = MagicMock()
     
     launcher._update_ui_state()
     
@@ -112,6 +116,8 @@ def test_status_logic_starting(mock_tk):
     launcher.btn_stop = MagicMock()
     launcher.btn_restart = MagicMock()
     launcher.btn_open = MagicMock()
+    launcher.btn_force_rebuild = MagicMock()
+    launcher.btn_logs = MagicMock()
     
     launcher._update_ui_state()
     
