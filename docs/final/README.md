@@ -4,7 +4,7 @@ Welcome to the **CodeGate** final defense package (Phase 6). This directory cont
 
 ### Technical & Architecture
 * [Final Technical Report](CODEGATE_FINAL_TECHNICAL_REPORT.md) - The definitive engineering report summarizing architecture, AI models, scoring mechanics, and CI/CD hardening.
-* [System Architecture Diagram](../../docs/images/final/architecture.png) (Requires screenshot generation).
+* System Architecture Diagram (Requires screenshot generation).
 
 ### Presentation & Defense
 * [Defense Presentation Slides (Markdown Outline)](CODEGATE_DEFENSE_SLIDES.md) - Structure and speaker notes for a 15-slide defense.

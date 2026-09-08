@@ -25,14 +25,14 @@ Source hiện tại cung cấp nền tảng mạnh cho 3 trụ cột: **AI Code 
 
 | Thuộc tính | Giá trị | Bằng chứng |
 |---|---|---|
-| **Tên project** | PR-Agent (The PR Agent) | [`action.yaml` L1](file:///F:/pr-agent/action.yaml) |
-| **Mục đích chính** | AI-powered Pull Request review/description/suggestions | [`cli.py` L19](file:///F:/pr-agent/pr_agent/cli.py#L19): "AI based pull request analyzer" |
+| **Tên project** | PR-Agent (The PR Agent) | `action.yaml` L1 |
+| **Mục đích chính** | AI-powered Pull Request review/description/suggestions | `cli.py` L19: "AI based pull request analyzer" |
 | **Vấn đề giải quyết** | Tự động hóa code review bằng AI cho PR | Toàn bộ `pr_agent/tools/` |
 | **Đối tượng sử dụng** | Developers, DevOps teams, GitHub/GitLab administrators | - |
 | **Loại project** | **CLI + Web Service (Webhook) + GitHub App + GitHub Action + AI Agent** | Xem phần 2.2 |
 | **Database** | **KHÔNG CÓ** — Stateless, không có persistence | Không tìm thấy migration, ORM, hay database driver nào |
 | **Frontend/Dashboard** | **KHÔNG CÓ** | Không tìm thấy HTML/CSS/JS/React/Vue nào |
-| **Authentication/User management** | **KHÔNG CÓ** — Chỉ có identity provider cơ bản và webhook signature verification | [`identity_providers/`](file:///F:/pr-agent/pr_agent/identity_providers) |
+| **Authentication/User management** | **KHÔNG CÓ** — Chỉ có identity provider cơ bản và webhook signature verification | `identity_providers/` |
 
 ### 2.2 Loại hình hoạt động
 
@@ -51,47 +51,47 @@ Mosaico (A2A Agent) → pr_agent/mosaico/server.py
 ```
 
 **Evidence:**
-- Docker multi-stage build: [`docker/Dockerfile`](file:///F:/pr-agent/docker/Dockerfile) — targets: `github_app`, `bitbucket_app`, `gitlab_webhook`, `azure_devops_webhook`, `gitea_app`, `github_polling`, `mosaico_agent`, `cli`, `test`
-- GitHub Action: [`action.yaml`](file:///F:/pr-agent/action.yaml)
-- CLI entry: [`pr_agent/cli.py` L165-166](file:///F:/pr-agent/pr_agent/cli.py#L165-L166)
+- Docker multi-stage build: `docker/Dockerfile` — targets: `github_app`, `bitbucket_app`, `gitlab_webhook`, `azure_devops_webhook`, `gitea_app`, `github_polling`, `mosaico_agent`, `cli`, `test`
+- GitHub Action: `action.yaml`
+- CLI entry: `pr_agent/cli.py` L165-166
 
 ### 2.3 Git Providers hiện hỗ trợ
 
 | Provider | File | Class | Size |
 |---|---|---|---|
-| **GitHub** | [`github_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/github_provider.py) | `GithubProvider` | 1636 lines |
-| **GitLab** | [`gitlab_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/gitlab_provider.py) | `GitLabProvider` | 1714 lines |
-| **Bitbucket Cloud** | [`bitbucket_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/bitbucket_provider.py) | `BitbucketProvider` | 732 lines |
-| **Bitbucket Server** | [`bitbucket_server_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/bitbucket_server_provider.py) | `BitbucketServerProvider` | ~700 lines |
-| **Azure DevOps** | [`azuredevops_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/azuredevops_provider.py) | `AzureDevopsProvider` | 1156 lines |
-| **Gitea** | [`gitea_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/gitea_provider.py) | `GiteaProvider` | ~1100 lines |
-| **Gerrit** | [`gerrit_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/gerrit_provider.py) | `GerritProvider` | ~380 lines |
-| **AWS CodeCommit** | [`codecommit_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/codecommit_provider.py) | `CodeCommitProvider` | ~500 lines |
-| **Local Git** | [`local_git_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/local_git_provider.py) | `LocalGitProvider` | ~320 lines |
-| **Plain Diff** | [`plain_diff_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/plain_diff_provider.py) | `PlainDiffGitProvider` | ~280 lines |
+| **GitHub** | `github_provider.py` | `GithubProvider` | 1636 lines |
+| **GitLab** | `gitlab_provider.py` | `GitLabProvider` | 1714 lines |
+| **Bitbucket Cloud** | `bitbucket_provider.py` | `BitbucketProvider` | 732 lines |
+| **Bitbucket Server** | `bitbucket_server_provider.py` | `BitbucketServerProvider` | ~700 lines |
+| **Azure DevOps** | `azuredevops_provider.py` | `AzureDevopsProvider` | 1156 lines |
+| **Gitea** | `gitea_provider.py` | `GiteaProvider` | ~1100 lines |
+| **Gerrit** | `gerrit_provider.py` | `GerritProvider` | ~380 lines |
+| **AWS CodeCommit** | `codecommit_provider.py` | `CodeCommitProvider` | ~500 lines |
+| **Local Git** | `local_git_provider.py` | `LocalGitProvider` | ~320 lines |
+| **Plain Diff** | `plain_diff_provider.py` | `PlainDiffGitProvider` | ~280 lines |
 
-**Evidence:** Factory mapping in [`git_providers/__init__.py` L16-27](file:///F:/pr-agent/pr_agent/git_providers/__init__.py#L16-L27)
+**Evidence:** Factory mapping in `git_providers/__init__.py` L16-27
 
 ### 2.4 AI/LLM Providers hiện hỗ trợ
 
 | Provider | Cơ chế | Bằng chứng |
 |---|---|---|
-| **OpenAI (GPT-3.5/4/4o/5.x/o-series)** | Via LiteLLM | [`algo/__init__.py` L1-57](file:///F:/pr-agent/pr_agent/algo/__init__.py#L1-L57) |
-| **Anthropic Claude (3.x/4.x/5.x)** | Via LiteLLM | [`algo/__init__.py` L70-267](file:///F:/pr-agent/pr_agent/algo/__init__.py#L70-L267) |
-| **Google Gemini** | Via LiteLLM (vertex_ai/ and gemini/) | [`algo/__init__.py` L104-146](file:///F:/pr-agent/pr_agent/algo/__init__.py#L104-L146) |
-| **AWS Bedrock** | Via LiteLLM + boto3 IMDS support | [`litellm_ai_handler.py` L76-98](file:///F:/pr-agent/pr_agent/algo/ai_handlers/litellm_ai_handler.py#L76-L98) |
+| **OpenAI (GPT-3.5/4/4o/5.x/o-series)** | Via LiteLLM | `algo/__init__.py` L1-57 |
+| **Anthropic Claude (3.x/4.x/5.x)** | Via LiteLLM | `algo/__init__.py` L70-267 |
+| **Google Gemini** | Via LiteLLM (vertex_ai/ and gemini/) | `algo/__init__.py` L104-146 |
+| **AWS Bedrock** | Via LiteLLM + boto3 IMDS support | `litellm_ai_handler.py` L76-98 |
 | **Azure OpenAI** | Via LiteLLM | `litellm_ai_handler.py` azure config |
-| **DeepSeek** | Via LiteLLM | [`algo/__init__.py` L73-76](file:///F:/pr-agent/pr_agent/algo/__init__.py#L73-L76) |
-| **Groq** | Via LiteLLM | [`algo/__init__.py` L271-280](file:///F:/pr-agent/pr_agent/algo/__init__.py#L271-L280) |
-| **Ollama (Local)** | Via LiteLLM | [`algo/__init__.py` L298](file:///F:/pr-agent/pr_agent/algo/__init__.py#L298) |
-| **WatsonX** | Via LiteLLM | [`algo/__init__.py` L299-304](file:///F:/pr-agent/pr_agent/algo/__init__.py#L299-L304) |
-| **xAI Grok** | Via LiteLLM | [`algo/__init__.py` L287-297](file:///F:/pr-agent/pr_agent/algo/__init__.py#L287-L297) |
-| **Mistral** | Via LiteLLM | [`algo/__init__.py` L308-321](file:///F:/pr-agent/pr_agent/algo/__init__.py#L308-L321) |
-| **OpenRouter** | Via LiteLLM + config | [`configuration.toml` L406-425](file:///F:/pr-agent/pr_agent/settings/configuration.toml#L406-L425) |
-| **SambaNova** | Via LiteLLM | [`algo/__init__.py` L281-286](file:///F:/pr-agent/pr_agent/algo/__init__.py#L281-L286) |
-| **LangChain** | Optional handler | [`langchain_ai_handler.py`](file:///F:/pr-agent/pr_agent/algo/ai_handlers/langchain_ai_handler.py) |
+| **DeepSeek** | Via LiteLLM | `algo/__init__.py` L73-76 |
+| **Groq** | Via LiteLLM | `algo/__init__.py` L271-280 |
+| **Ollama (Local)** | Via LiteLLM | `algo/__init__.py` L298 |
+| **WatsonX** | Via LiteLLM | `algo/__init__.py` L299-304 |
+| **xAI Grok** | Via LiteLLM | `algo/__init__.py` L287-297 |
+| **Mistral** | Via LiteLLM | `algo/__init__.py` L308-321 |
+| **OpenRouter** | Via LiteLLM + config | `configuration.toml` L406-425 |
+| **SambaNova** | Via LiteLLM | `algo/__init__.py` L281-286 |
+| **LangChain** | Optional handler | `langchain_ai_handler.py` |
 
-**Core abstraction:** [`BaseAiHandler`](file:///F:/pr-agent/pr_agent/algo/ai_handlers/base_ai_handler.py) → [`LiteLLMAIHandler`](file:///F:/pr-agent/pr_agent/algo/ai_handlers/litellm_ai_handler.py) (1098 lines, primary implementation)
+**Core abstraction:** `BaseAiHandler` → `LiteLLMAIHandler` (1098 lines, primary implementation)
 
 ---
 
@@ -309,18 +309,18 @@ graph TD
 
 | Step | Module | File | Key Function/Class |
 |---|---|---|---|
-| Entry (CLI) | cli | [`cli.py`](file:///F:/pr-agent/pr_agent/cli.py) | `run()` |
-| Entry (Webhook) | servers | [`github_app.py`](file:///F:/pr-agent/pr_agent/servers/github_app.py) | `handle_github_webhooks()` |
-| Routing | agent | [`pr_agent.py`](file:///F:/pr-agent/pr_agent/agent/pr_agent.py) | `PRAgent._handle_request()` |
-| Settings | config | [`config_loader.py`](file:///F:/pr-agent/pr_agent/config_loader.py) | `get_settings()` |
-| Repo Settings | git_providers | [`utils.py`](file:///F:/pr-agent/pr_agent/git_providers/utils.py) | `apply_repo_settings()` |
-| Tool Execution | tools | [`pr_reviewer.py`](file:///F:/pr-agent/pr_agent/tools/pr_reviewer.py) | `PRReviewer.run()` |
-| Diff Generation | algo | [`pr_processing.py`](file:///F:/pr-agent/pr_agent/algo/pr_processing.py) | `get_pr_diff()` |
-| Patch Processing | algo | [`git_patch_processing.py`](file:///F:/pr-agent/pr_agent/algo/git_patch_processing.py) | `extend_patch()` |
-| Token Management | algo | [`token_handler.py`](file:///F:/pr-agent/pr_agent/algo/token_handler.py) | `TokenHandler.count_tokens()` |
-| AI Call | algo/ai_handlers | [`litellm_ai_handler.py`](file:///F:/pr-agent/pr_agent/algo/ai_handlers/litellm_ai_handler.py) | `LiteLLMAIHandler.chat_completion()` |
-| Output Formatting | algo | [`utils.py`](file:///F:/pr-agent/pr_agent/algo/utils.py) | `convert_to_markdown_v2()` |
-| Publishing | git_providers | [`github_provider.py`](file:///F:/pr-agent/pr_agent/git_providers/github_provider.py) | `publish_comment()`, `publish_inline_comments()` |
+| Entry (CLI) | cli | `cli.py` | `run()` |
+| Entry (Webhook) | servers | `github_app.py` | `handle_github_webhooks()` |
+| Routing | agent | `pr_agent.py` | `PRAgent._handle_request()` |
+| Settings | config | `config_loader.py` | `get_settings()` |
+| Repo Settings | git_providers | `utils.py` | `apply_repo_settings()` |
+| Tool Execution | tools | `pr_reviewer.py` | `PRReviewer.run()` |
+| Diff Generation | algo | `pr_processing.py` | `get_pr_diff()` |
+| Patch Processing | algo | `git_patch_processing.py` | `extend_patch()` |
+| Token Management | algo | `token_handler.py` | `TokenHandler.count_tokens()` |
+| AI Call | algo/ai_handlers | `litellm_ai_handler.py` | `LiteLLMAIHandler.chat_completion()` |
+| Output Formatting | algo | `utils.py` | `convert_to_markdown_v2()` |
+| Publishing | git_providers | `github_provider.py` | `publish_comment()`, `publish_inline_comments()` |
 
 ---
 
@@ -466,7 +466,7 @@ User:       PR info (title, branch, description, diff) + ticket info
 Output:     YAML matching PRReview Pydantic model
 ```
 
-Key prompt features (from [`pr_reviewer_prompts.toml`](file:///F:/pr-agent/pr_agent/settings/pr_reviewer_prompts.toml)):
+Key prompt features (from `pr_reviewer_prompts.toml`):
 - **Severity guidance** (L49-61): Clear rules on when to flag vs. skip
 - **Structured output** (L91-163): Pydantic model defines: estimated effort, security concerns, key issues, ticket compliance, can-be-split, TODO scan, contribution time cost
 - **issue_header** (L101): Categories like "Possible Bug", etc.
@@ -540,7 +540,7 @@ Difficulty to extract: MEDIUM (3-4 effort units)
 
 ### 7.1 Interface Definition
 
-[`GitProvider`](file:///F:/pr-agent/pr_agent/git_providers/git_provider.py#L117) (ABC) defines 30+ methods:
+`GitProvider` (ABC) defines 30+ methods:
 
 | API Method | Abstract | Purpose |
 |---|:---:|---|
