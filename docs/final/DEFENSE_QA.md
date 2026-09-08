@@ -57,7 +57,7 @@
 **Answer**: CI tests Python code formatting (`ruff`), Python security (`bandit`), dependency vulnerabilities (`pip-audit`, `npm audit`), secret leakage (`gitleaks`), backend logic (`pytest` against live Postgres), frontend logic (`vitest`), and Docker build integrity.
 
 ### 19. Why no cloud deployment?
-**Answer**: The scope of this phase was to provide a hardened, production-ready containerized package. Actual cloud deployment requires external provisioning (AWS/GCP), domain registration, and TLS termination, which were out of scope.
+**Answer**: The scope of this phase was to provide a hardened, final local product containerized package. Actual cloud deployment requires external provisioning (AWS/GCP), domain registration, and TLS termination, which were out of scope.
 
 ### 20. What is a merge gate?
 **Answer**: A merge gate is a policy rule that prevents a Pull Request from being merged into the main branch until specific conditions (like passing tests, zero security vulnerabilities, and peer approval) are met.

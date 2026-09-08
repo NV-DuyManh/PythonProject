@@ -147,7 +147,7 @@
 ---
 
 ## Slide 12: CI/CD & Security Hardening
-**Title**: Production-Ready Infrastructure
+**Title**: Final Local Product Infrastructure
 **Message**: Built for security and reproducibility.
 **Bullets**:
 - Docker Compose cluster isolating backend, frontend, and PostgreSQL.
