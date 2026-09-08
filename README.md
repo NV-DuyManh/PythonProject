@@ -1,56 +1,91 @@
-# CodeGate v1.0.0
-**AI-Powered Pull Request Quality Intelligence Platform**
+# CodeGate
 
-*Welcome to CodeGate. If you are reviewing this project for a defense or presentation, please start here: [**Final Defense & Documentation Index**](docs/final/README.md).*
+**AI-Powered Pull Request Quality Intelligence Platform**
 
 CodeGate is a comprehensive Pull Request Quality Intelligence Platform that analyzes Pull Requests using AI-assisted review, static analysis, test evidence, and changed-code coverage. It provides explainable Quality and Risk Scores, Merge Policy evaluation, reviewer recommendations, and an engineering analytics dashboard.
 
-## 🚀 Quick Start (Two Paths)
+*If you are reviewing this project for a defense or presentation, please start here: [**Final Defense & Documentation Index**](docs/README.md).*
 
-**WARNING:** Both methods use ports `8000` (Backend) and `5173` (Frontend). Do not run both methods simultaneously.
+## What CodeGate Does
 
-### Path A: Windows Local (Docker/PostgreSQL)
-1. Double-click `CodeGateLauncher.exe` in the project root.
-2. Click **START CODEGATE** (This runs `docker compose up -d --build`).
-3. Browser automatically opens: http://127.0.0.1:5173
+When a developer opens or updates a Pull Request:
+1. **GitHub PR** triggers an event.
+2. **GitHub Webhook** is received by CodeGate.
+3. **Async Analysis** is enqueued and processed by Celery Workers.
+4. **AI Review** evaluates the code changes for bugs, security, and quality issues.
+5. **Static Analysis** scans the AST for deterministic flaws.
+6. **Tests/Coverage** are evaluated via a safe execution sandbox.
+7. **Quality Score & Risk Score** are computed based on findings.
+8. **Policy** is evaluated (PASS, WARNING, BLOCK).
+9. **Reviewer Recommendation** suggests the best engineers to review the PR.
+10. **GitHub Check** is published back to the PR with the results.
+11. **Dashboard** visualizes the data and provides engineering analytics.
 
-### Path B: Docker Production (PostgreSQL)
-*Requires Docker Desktop installed.*
-```bash
-# Boot the backend, frontend, and postgres cluster
-docker compose -f compose.codegate.yml up -d --build
+## Core Features
+
+- **Automated Code Review:** Deterministic static analysis combined with probabilistic AI insights.
+- **Quality & Risk Scoring:** Explainable scores mapped to your team's quality gates.
+- **Merge Policy Engine:** Blocks, warns, or passes based on strict, configurable evidence.
+- **Reviewer Recommendations:** Smart suggestions based on CODEOWNERS, file history, and directory expertise.
+- **Full Analytics Dashboard:** React/Vite SPA for exploring PR quality trends and tenant data.
+- **Secure Sandbox Testing:** Docker-based execution of repository test suites.
+
+## Architecture
+
+```mermaid
+flowchart TD
+    User([Developer]) -->|Opens PR| GH[GitHub]
+    GH -->|Webhook Event| API[FastAPI Webhook Handler]
+    API -->|Enqueue AnalysisJob| DB[(PostgreSQL 16)]
+    API -->|Job Data| Redis[(Redis Broker)]
+    Redis --> Worker[Celery Worker]
+    Worker --> AI[AI Reviewer\nGroq/LiteLLM]
+    Worker --> SA[Static Analysis\nRuff/Bandit]
+    Worker --> TE[Test Executor\nDocker]
+    AI --> Scoring[Scoring Engines\nQuality, Risk, Policy]
+    SA --> Scoring
+    TE --> Scoring
+    Scoring --> DB
+    Scoring --> GHCheck[GitHub Check API]
+    GHCheck --> GH
+    DB --> Web[React Dashboard]
 ```
-Access the dashboard at http://127.0.0.1:5173.
 
-## 🏗️ Architecture & Features
+## Technology Stack
 
-CodeGate solves the problem of subjective, inconsistent pull request reviews by unifying probabilistic AI insights with deterministic static analysis (Ruff, Bandit) and testing metrics.
+- **Backend:** FastAPI, SQLAlchemy, Alembic
+- **Database:** PostgreSQL 16
+- **Queue:** Redis + Celery
+- **Frontend:** React + Vite
+- **Runtime:** Docker Compose
+- **AI:** PR-Agent foundation + LiteLLM-compatible provider configuration (e.g., Groq)
+- **Static Analysis:** Ruff, Bandit, Radon
+- **Testing:** DockerTestExecutor
 
-- **Quality & Risk Scoring:** Deterministic algorithms.
-- **Merge Policy Engine:** Blocks, warns, or passes based on strict evidence.
-- **Reviewer Recommendations:** Based on CODEOWNERS and expertise.
-- **Full Dashboard:** React/Vite SPA.
-- **Database:** PostgreSQL 16 (production) or SQLite (testing only).
-- **LLM:** Powered by Groq (Primary: `groq/openai/gpt-oss-120b`).
+## Requirements
 
-## 🛡️ CI/CD & Security
+### Normal User Requirements
+- Windows 10/11, macOS, or Linux
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (must be running)
+- Internet connection (for GitHub and external AI provider access)
+- A GitHub account and repository access
 
-CodeGate guarantees safe operations via a hardened GitHub Actions pipeline (`codegate-ci.yml`) enforcing:
-- **Dependency Auditing:** `pip-audit`, `npm audit`
-- **Secret Scanning:** `gitleaks-action` blocks `.env`, `*.pem`, and keys.
-- **Static Security:** `bandit` AST scanning for Python vulnerabilities.
-- **Regression Tests:** 151/151 Backend tests and 41/41 Frontend tests pass safely.
-- **API Security:** Nginx HTTP security headers, CORS restrictions, and robust error masking.
+*Note: You do not need Python or Node.js installed to run the packaged product.*
 
-*Read the [Full Security Policy](docs/SECURITY.md).*
+### Developer Requirements
+- Python 3.12+
+- Node.js 20+
+- Git
+- Docker Engine / Docker Desktop
 
-## 📚 Deep Dive Documentation
+## Documentation Quick Links
 
-- [System Architecture](docs/architecture/CODEGATE_ARCHITECTURE.md)
-- [Analysis Pipeline](docs/architecture/CODEGATE_ANALYSIS_PIPELINE.md)
-- [Quality Score Mechanics](docs/features/QUALITY_SCORE.md)
-- [Risk Score Mechanics](docs/features/RISK_SCORE.md)
-- [GitHub App Integration](docs/integrations/GITHUB.md)
+- [**First Time Setup (Clone & Run Guide)**](docs/FIRST_RUN.md)
+- [**Environment Configuration Guide**](docs/CONFIGURATION.md)
+- [**Architecture Deep Dive**](docs/ARCHITECTURE.md)
+- [**GitHub App Setup**](docs/GITHUB_APP_SETUP.md)
+- [**AI Configuration**](docs/AI_CONFIGURATION.md)
+- [**Troubleshooting**](docs/TROUBLESHOOTING.md)
 
 ## 🤝 Upstream Attribution
 
@@ -60,4 +95,5 @@ CodeGate extends the open-source **PR-Agent** framework.
 - CodeGate does not claim authorship over original PR-Agent code.
 
 ## 📜 License
+
 MIT License. Upstream copyrights belong to their respective owners. CodeGate-specific additions are licensed under the same terms.
