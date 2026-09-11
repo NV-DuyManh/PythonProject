@@ -135,5 +135,12 @@ services:
       timeout: 5s
       retries: 3
 
+  smee:
+    image: node:20-alpine
+    restart: unless-stopped
+    command: npx smee-client -u ${SMEE_URL:-https://smee.io/4OjZJDKsq99xrOnh} -t http://backend:8000/api/v1/github_webhooks
+    depends_on:
+      - backend
+
 volumes:
   codegate_postgres_data:
