@@ -35,10 +35,10 @@ class GitHubAppService:
         private_key = self._get_private_key()
         
         now = int(time.time())
-        # JWT expiration time (10 minute maximum)
+        # JWT expiration time (8 minutes to safely tolerate local clock drift)
         payload = {
             "iat": now - 60,
-            "exp": now + (10 * 60),
+            "exp": now + (8 * 60),
             "iss": self.app_id
         }
         
