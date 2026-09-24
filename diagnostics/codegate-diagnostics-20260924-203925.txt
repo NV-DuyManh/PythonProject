@@ -1,0 +1,20 @@
+Running diagnostics...
+
+OS: nt
+Project Root: C:\Users\quang hieu\Downloads\baitap_giaodien\PythonProject
+Docker Version: Docker version 29.8.0, build 88096ef
+Compose Version: Docker Compose version v5.5.1
+Port 5173 Available: False
+Port 8000 Available: False
+
+Container Status:
+NAME                  IMAGE                                                                     COMMAND                  SERVICE    CREATED         STATUS                          PORTS
+codegate-backend-1    codegate-backend                                                          "python -m uvicorn câ€¦"   backend    2 minutes ago   Up About a minute (unhealthy)   8000/tcp
+codegate-frontend-1   sha256:62642d81b313ab78a745da4fe1d31353d563bcef020caeace41d4d99b6357641   "/docker-entrypoint.â€¦"   frontend   2 minutes ago   Created                         
+codegate-migrate-1    codegate-migrate                                                          "alembic upgrade head"   migrate    2 minutes ago   Exited (0) About a minute ago   
+codegate-postgres-1   postgres:16-alpine                                                        "docker-entrypoint.sâ€¦"   postgres   2 minutes ago   Up About a minute (healthy)     5432/tcp
+codegate-redis-1      redis:7-alpine                                                            "docker-entrypoint.sâ€¦"   redis      2 minutes ago   Up About a minute (healthy)     6379/tcp
+codegate-smee-1       node:20-alpine                                                            "docker-entrypoint.sâ€¦"   smee       2 minutes ago   Up About a minute               
+codegate-worker-1     codegate-worker                                                           "celery -A codegate.â€¦"   worker     2 minutes ago   Up About a minute (healthy)     8000/tcp
+
+

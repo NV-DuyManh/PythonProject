@@ -1,0 +1,20 @@
+Running diagnostics...
+
+OS: nt
+Project Root: C:\Users\quang hieu\Downloads\baitap_giaodien\PythonProject
+Docker Version: Docker version 29.8.0, build 88096ef
+Compose Version: Docker Compose version v5.5.1
+Port 5173 Available: False
+Port 8000 Available: False
+
+Container Status:
+NAME                  IMAGE                                                                     COMMAND                  SERVICE    CREATED          STATUS                     PORTS
+codegate-backend-1    sha256:8c7c004d082d1a14fc08757dbaac1a653e29222d6a71719675a447764ec7325a   "python -m uvicorn câ€¦"   backend    5 minutes ago    Up 4 minutes (unhealthy)   8000/tcp
+codegate-frontend-1   sha256:de04402bbd2b5df5e53100fc196ec8e130f3f23e0497dc6e974b2108dd9dfddf   "/docker-entrypoint.â€¦"   frontend   31 minutes ago   Created                    
+codegate-migrate-1    sha256:af2ef5fccaec7916cf6827054ddab76da56f46e8e0aacc3eec1387798fa59f98   "alembic upgrade head"   migrate    31 minutes ago   Exited (1) 4 minutes ago   
+codegate-postgres-1   postgres:16-alpine                                                        "docker-entrypoint.sâ€¦"   postgres   5 hours ago      Up 4 minutes (healthy)     5432/tcp
+codegate-redis-1      redis:7-alpine                                                            "docker-entrypoint.sâ€¦"   redis      31 minutes ago   Up 4 minutes (healthy)     6379/tcp
+codegate-smee-1       node:20-alpine                                                            "docker-entrypoint.sâ€¦"   smee       40 minutes ago   Up 4 minutes               
+codegate-worker-1     sha256:8f15759fb80fd2e95e457b57f0e3588e4e034b6120be0dc42c0f2be0039c6285   "celery -A codegate.â€¦"   worker     5 minutes ago    Up 4 minutes (healthy)     8000/tcp
+
+

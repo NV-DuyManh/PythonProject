@@ -1,0 +1,16 @@
+Running diagnostics...
+
+OS: nt
+Project Root: C:\Users\quang hieu\Downloads\baitap_giaodien\PythonProject
+Docker Version: Docker version 29.8.0, build 88096ef
+Compose Version: Docker Compose version v5.5.1
+Port 5173 Available: True
+Port 8000 Available: True
+
+Container Status:
+NAME                  IMAGE                COMMAND                  SERVICE    CREATED         STATUS    PORTS
+codegate-migrate-1    codegate-migrate     "alembic upgrade head"   migrate    1 second ago    Created   
+codegate-postgres-1   postgres:16-alpine   "docker-entrypoint.sâ€¦"   postgres   2 minutes ago   Created   
+codegate-redis-1      redis:7-alpine       "docker-entrypoint.sâ€¦"   redis      2 minutes ago   Created   
+
+
