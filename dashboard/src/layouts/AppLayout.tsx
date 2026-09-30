@@ -146,14 +146,14 @@ export function AppLayout() {
             <button ref={menuButton} className="mobile-toggle icon-button" aria-label="Open navigation" aria-expanded={mobileMenuOpen} aria-controls="app-navigation" onClick={() => setMobileMenuOpen(true)}><Menu size={20} /></button>
             <div className="relative">
               <button className="workspace-trigger" aria-expanded={showWorkspaceMenu} aria-controls="workspace-menu" onClick={() => { setShowWorkspaceMenu(!showWorkspaceMenu); setShowUserMenu(false); }}>
-                <span className="text-xs uppercase font-bold tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Workspace</span>
-                <span className="font-semibold text-slate-900">{activeWorkspace?.name || 'Select Workspace'}</span><ChevronDown size={14} className="text-slate-400" />
+                <span className="text-xs uppercase font-bold tracking-wider text-[var(--cg-primary)] bg-[var(--cg-primary-light)] px-2 py-0.5 rounded">Workspace</span>
+                <span className="font-semibold text-[var(--cg-text)]">{activeWorkspace?.name || 'Select Workspace'}</span><ChevronDown size={14} className="text-[var(--cg-muted)]" />
               </button>
               {showWorkspaceMenu && <div id="workspace-menu" className="dropdown" aria-label="Workspaces">
-                <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-400">Available Workspaces</div>
+                <div className="px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider text-[var(--cg-muted)]">Available Workspaces</div>
                 {workspaces.map(workspace => <button key={workspace.id} aria-pressed={activeWorkspace?.id === workspace.id}
                   onClick={() => { setActiveWorkspace(workspace.id); setShowWorkspaceMenu(false); }}>
-                  <span className="flex-1 truncate">{workspace.name}</span>{activeWorkspace?.id === workspace.id && <Check size={16} className="text-indigo-600" />}
+                  <span className="flex-1 truncate">{workspace.name}</span>{activeWorkspace?.id === workspace.id && <Check size={16} className="text-[var(--cg-primary)]" />}
                 </button>)}
               </div>}
             </div>
@@ -165,17 +165,17 @@ export function AppLayout() {
             </div>
             <ThemeToggle />
             <div className="relative">
-              <button className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-slate-100 transition-colors" aria-label="Account menu" aria-expanded={showUserMenu} aria-controls="account-menu" onClick={() => { setShowUserMenu(!showUserMenu); setShowWorkspaceMenu(false); }}>
+              <button className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-[var(--cg-surface-soft)] transition-colors" aria-label="Account menu" aria-expanded={showUserMenu} aria-controls="account-menu" onClick={() => { setShowUserMenu(!showUserMenu); setShowWorkspaceMenu(false); }}>
                 {user?.avatar_url ? <img src={user.avatar_url} alt="" className="avatar" /> : <span className="avatar">{user?.username?.charAt(0).toUpperCase() || 'U'}</span>}
-                <span className="topbar__user-name font-semibold text-slate-800 text-[13.5px]">{user?.display_name || user?.username || 'User'}</span>
-                <ChevronDown size={14} className="text-slate-400" />
+                <span className="topbar__user-name font-semibold text-[var(--cg-text)] text-[13.5px]">{user?.display_name || user?.username || 'User'}</span>
+                <ChevronDown size={14} className="text-[var(--cg-muted)]" />
               </button>
               {showUserMenu && <div id="account-menu" className="dropdown dropdown--right">
-                <div className="px-3 py-2 border-b border-slate-100">
-                  <p className="font-semibold text-slate-900 text-sm">{user?.display_name || user?.username}</p>
-                  <p className="text-xs text-slate-500">@{user?.username}</p>
+                <div className="px-3 py-2 border-b border-[var(--cg-border-soft)]">
+                  <p className="font-semibold text-[var(--cg-text)] text-sm">{user?.display_name || user?.username}</p>
+                  <p className="text-xs text-[var(--cg-muted)]">@{user?.username}</p>
                 </div>
-                <button onClick={() => logout()} className="text-rose-600 hover:bg-rose-50 hover:text-rose-700 mt-1"><LogOut size={16} />Sign out</button>
+                <button onClick={() => logout()} className="text-rose-500 hover:bg-rose-500/10 hover:text-rose-400 mt-1"><LogOut size={16} />Sign out</button>
               </div>}
             </div>
           </div>

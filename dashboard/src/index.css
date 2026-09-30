@@ -282,6 +282,7 @@
     z-index: 30;
   }
   .topbar__group { display: flex; align-items: center; gap: 14px; min-width: 0; }
+  .topbar__user-name { color: var(--cg-text); font-weight: 600; font-size: 13.5px; }
   .workspace-trigger {
     display: inline-flex;
     align-items: center;
