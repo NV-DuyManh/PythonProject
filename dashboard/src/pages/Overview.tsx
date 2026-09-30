@@ -10,7 +10,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Badge } from '../components/ui/Badge';
 import { PolicyBadge } from '../components/PolicyBadge';
-import { DistributionChart, TrendChart } from '../charts/DashboardCharts';
+import { PolicyDonutChart, QualityRiskTrendChart } from '../charts/DashboardCharts';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Overview() {
@@ -200,14 +200,13 @@ export function Overview() {
 
       {/* Analytics Charts */}
       <div className="dashboard-grid dashboard-grid--analytics">
-        <TrendChart
+        <QualityRiskTrendChart
           title="Quality & risk"
-          series={[
-            { name: 'Quality', color: 'var(--cg-primary)', points: d.quality_trend || [] },
-            { name: 'Risk', color: 'var(--cg-amber)', points: d.risk_trend || [] },
-          ]}
+          prs={prs || []}
+          qualityTrend={d.quality_trend || []}
+          riskTrend={d.risk_trend || []}
         />
-        <DistributionChart
+        <PolicyDonutChart
           title="Policy decisions"
           values={
             d.policy_decision_distribution || {
@@ -216,7 +215,7 @@ export function Overview() {
               BLOCK: d.policy_block_count,
             }
           }
-          colors={{ PASS: 'var(--cg-green)', WARNING: 'var(--cg-amber)', BLOCK: 'var(--cg-red)' }}
+          colors={{ PASS: '#10b981', WARNING: '#f59e0b', BLOCK: '#ef4444' }}
         />
       </div>
 

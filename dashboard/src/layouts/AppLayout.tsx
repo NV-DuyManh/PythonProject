@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Badge } from '../components/ui/Badge';
 import { useAuth } from '../contexts/AuthContext';
+import { ThemeToggle } from '../components/ui/ThemeToggle';
 
 export function AppLayout() {
   const { user, workspaces, activeWorkspace, setActiveWorkspace, logout } = useAuth();
@@ -96,7 +97,10 @@ export function AppLayout() {
             </span>
             <span className="text-[11px] font-normal text-slate-400">Code Reviews & Coaching</span>
           </div>
-          <button className="mobile-toggle icon-button ml-auto text-slate-400 hover:text-white" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)}><X size={20} /></button>
+          <div className="ml-auto flex items-center gap-1.5">
+            <ThemeToggle className="sm:hidden" />
+            <button className="mobile-toggle icon-button text-slate-400 hover:text-white" aria-label="Close navigation" onClick={() => setMobileMenuOpen(false)}><X size={20} /></button>
+          </div>
         </div>
         <nav className="sidebar__nav" aria-label="Workspace">
           {navItems.map((item, index) => (
@@ -159,6 +163,7 @@ export function AppLayout() {
               {isDemo && <Badge variant="warning">DEMO MODE</Badge>}
               {isLive && <Badge variant="success">LIVE GITHUB</Badge>}
             </div>
+            <ThemeToggle />
             <div className="relative">
               <button className="flex items-center gap-2.5 py-1.5 px-2 rounded-xl hover:bg-slate-100 transition-colors" aria-label="Account menu" aria-expanded={showUserMenu} aria-controls="account-menu" onClick={() => { setShowUserMenu(!showUserMenu); setShowWorkspaceMenu(false); }}>
                 {user?.avatar_url ? <img src={user.avatar_url} alt="" className="avatar" /> : <span className="avatar">{user?.username?.charAt(0).toUpperCase() || 'U'}</span>}

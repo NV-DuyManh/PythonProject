@@ -6,20 +6,27 @@ import { ErrorState } from '../components/ui/ErrorState';
 import { EmptyState } from '../components/ui/EmptyState';
 import { Skeleton } from '../components/ui/Skeleton';
 import { PageHeader } from '../components/ui/PageHeader';
-import { TrendChart, DistributionChart, PolicyTrendChart } from '../charts/DashboardCharts';
+import { TrendChart, DistributionChart, PolicyTrendChart, PolicyDonutChart, QualityRiskTrendChart } from '../charts/DashboardCharts';
 import { formatPercentage, formatScore } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Analytics() {
   const { workspaceVersion } = useAuth();
   const [data, setData] = useState<DashboardOverviewResponse | null>(null);
+  const [prs, setPrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
     setError(null);
-    CodeGateAPI.getOverview().then(setData).catch(err => setError(err.message)).finally(() => setLoading(false));
+    Promise.all([
+      CodeGateAPI.getOverview(),
+      CodeGateAPI.getPullRequests().catch(() => [])
+    ]).then(([overviewData, prsData]) => {
+      setData(overviewData);
+      setPrs(prsData || []);
+    }).catch(err => setError(err.message)).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [workspaceVersion]);
@@ -115,17 +122,34 @@ export function Analytics() {
         </div>
       </dl>
 
-      <div className="dashboard-grid dashboard-grid--bottom">
-        <TrendChart title="Quality history" series={[{ name: 'Quality', color: 'var(--cg-primary)', points: d.quality_trend || [] }]} />
-        <TrendChart title="Risk history" series={[{ name: 'Risk', color: 'var(--cg-amber)', points: d.risk_trend || [] }]} />
+      <div className="dashboard-grid dashboard-grid--analytics">
+        <QualityRiskTrendChart
+          title="Quality & risk evolution"
+          prs={prs || []}
+          qualityTrend={d.quality_trend || []}
+          riskTrend={d.risk_trend || []}
+        />
+        <PolicyDonutChart
+          title="Policy distribution"
+          values={
+            d.policy_decision_distribution || {
+              PASS: d.policy_pass_count,
+              WARNING: d.policy_warning_count,
+              BLOCK: d.policy_block_count,
+            }
+          }
+          colors={{ PASS: '#10b981', WARNING: '#f59e0b', BLOCK: '#ef4444' }}
+        />
+      </div>
+
+      <div className="dashboard-grid dashboard-grid--bottom mt-6">
         <PolicyTrendChart data={d.policy_trend || []} />
         <TrendChart title="Changed-code coverage" series={[{ name: 'Coverage %', color: 'var(--cg-primary)', points: d.changed_coverage_trend || [] }]} />
       </div>
 
-      <div className="dashboard-grid dashboard-grid--charts">
+      <div className="dashboard-grid dashboard-grid--charts mt-6">
         <DistributionChart title="Quality grades" values={d.quality_grade_distribution || {}} />
         <DistributionChart title="Risk levels" values={d.risk_level_distribution || {}} colors={{ LOW: 'var(--cg-green)', MEDIUM: 'var(--cg-amber)', HIGH: 'var(--cg-red)', CRITICAL: 'var(--cg-red)' }} />
-        <DistributionChart title="Policy decisions" values={d.policy_decision_distribution || {}} colors={{ PASS: 'var(--cg-green)', WARNING: 'var(--cg-amber)', BLOCK: 'var(--cg-red)' }} />
       </div>
 
       <section className="dashboard-panel">
