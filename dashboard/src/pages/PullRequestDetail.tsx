@@ -130,12 +130,12 @@ export function PullRequestDetail() {
   return (
     <div className="page-stack">
       {/* Back Link Breadcrumb */}
-      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-        <Link to="/pull-requests" className="hover:text-indigo-600 flex items-center gap-1">
+      <div className="flex items-center gap-2 text-xs font-semibold text-[var(--cg-muted)]">
+        <Link to="/pull-requests" className="hover:text-indigo-500 flex items-center gap-1">
           <ArrowLeft size={14} /> Pull Requests
         </Link>
         <span>/</span>
-        <span className="text-slate-800 font-bold">{pr.repository}</span>
+        <span className="text-[var(--cg-text)] font-bold">{pr.repository}</span>
         <span>/</span>
         <span>#{pr.number}</span>
       </div>
@@ -144,10 +144,10 @@ export function PullRequestDetail() {
       <div className="page-hero">
         <div className="page-hero__content">
           <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--cg-surface-soft)] text-[var(--cg-text)] border border-[var(--cg-border-soft)]">
               PR #{pr.number}
             </span>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
               {pr.repository}
             </span>
             {analysis && (
@@ -171,7 +171,7 @@ export function PullRequestDetail() {
             {pr.head_branch && (
               <>
                 <span>·</span>
-                <span className="inline-flex items-center gap-1 font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">
+                <span className="inline-flex items-center gap-1 font-mono text-xs bg-[var(--cg-surface-soft)] text-[var(--cg-text-secondary)] border border-[var(--cg-border-soft)] px-2 py-0.5 rounded">
                   <Code2 size={12} /> {pr.head_branch} {pr.head_sha ? `(${pr.head_sha.substring(0, 7)})` : ''}
                 </span>
               </>
@@ -190,8 +190,8 @@ export function PullRequestDetail() {
       </div>
 
       {/* Meta Timestamps */}
-      <div className="flex flex-wrap gap-4 text-xs font-medium text-slate-500 bg-white border border-slate-200/80 p-3 rounded-xl">
-        <span>Analysis ID: <strong>{analysis?.analysis_id ? '#' + analysis.analysis_id : 'Not run'}</strong></span>
+      <div className="pr-meta-bar">
+        <span>Analysis ID: <strong className="text-[var(--cg-text)]">{analysis?.analysis_id ? '#' + analysis.analysis_id : 'Not run'}</strong></span>
         <span>•</span>
         {analysis?.created_at && <span>Started: {formatDate(analysis.created_at)}</span>}
         {analysis?.completed_at && (
@@ -305,10 +305,10 @@ export function PullRequestDetail() {
             Policy evidence
           </div>
           <p className="muted mb-3">Revision {policy.policy_revision ?? 'N/A'} · Engine {policy.engine_version ?? 'N/A'}</p>
-          <div className="flex flex-wrap gap-4 mb-3 font-semibold text-xs">
-            <span className="text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">{policy.passed_rules ?? 'N/A'} passed rules</span>
-            <span className="text-amber-800 bg-amber-100/60 px-2 py-0.5 rounded">{policy.warning_rules ?? 'N/A'} warnings</span>
-            <span className="text-rose-700 bg-rose-100/60 px-2 py-0.5 rounded">{policy.blocked_rules ?? 'N/A'} blocked rules</span>
+          <div className="flex flex-wrap gap-2 mb-3 font-semibold text-xs">
+            <span className="policy-badge policy-badge--pass">{policy.passed_rules ?? 0} passed rules</span>
+            <span className="policy-badge policy-badge--warning">{policy.warning_rules ?? 0} warnings</span>
+            <span className="policy-badge policy-badge--block">{policy.blocked_rules ?? 0} blocked rules</span>
           </div>
           <ul className="decision-panel__reasons">
             {policy.reasons?.map((reason: string, idx: number) => (
@@ -331,38 +331,34 @@ export function PullRequestDetail() {
       <div className="dashboard-panel">
         <div className="dashboard-panel__head flex-wrap gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xl">
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-xl">
               🎓
             </div>
             <div>
               <div className="dashboard-panel__title flex items-center gap-2">
                 Anteater Code Lessons & Findings
                 {findings && findings.length > 0 && (
-                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-500/15 text-indigo-600 dark:text-indigo-400">
                     {findings.length} Lessons
                   </span>
                 )}
               </div>
               <div className="dashboard-panel__meta">
-                Interactive learning & coaching feedback designed for students and developers
+                Interactive learning & coaching feedback derived from automated security, quality, and AI reviews
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+          <div className="chart-view-toggle">
             <button
               onClick={() => setViewMode('cards')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                viewMode === 'cards' ? 'bg-white shadow text-indigo-700' : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`chart-view-btn ${viewMode === 'cards' ? 'chart-view-btn--active' : ''}`}
             >
               <LayoutGrid size={14} /> Lesson Cards
             </button>
             <button
               onClick={() => setViewMode('table')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
-                viewMode === 'table' ? 'bg-white shadow text-indigo-700' : 'text-slate-600 hover:text-slate-900'
-              }`}
+              className={`chart-view-btn ${viewMode === 'table' ? 'chart-view-btn--active' : ''}`}
             >
               <List size={14} /> Summary Table
             </button>
@@ -380,7 +376,7 @@ export function PullRequestDetail() {
                   return (
                     <div
                       key={idx}
-                      className={`lesson-card ${isUnderstood ? 'border-emerald-200 bg-emerald-50/20' : ''}`}
+                      className={`lesson-card ${isUnderstood ? 'border-emerald-500/40 bg-emerald-500/5' : ''}`}
                     >
                       <div className="lesson-card__head">
                         <div className="flex flex-wrap items-center gap-2">
@@ -399,50 +395,84 @@ export function PullRequestDetail() {
                           >
                             {f.severity}
                           </Badge>
-                          <span className="text-xs text-slate-500 font-medium">Category: {f.category}</span>
+                          {f.rule_id && (
+                            <span className="text-xs font-mono font-semibold px-2 py-0.5 rounded bg-[var(--cg-surface-soft)] text-[var(--cg-text-secondary)] border border-[var(--cg-border-soft)]">
+                              {f.rule_id}
+                            </span>
+                          )}
+                          <span className="text-xs text-[var(--cg-muted)] font-medium">Category: {f.category}</span>
+                          {f.source && (
+                            <span className="text-[11px] text-[var(--cg-muted)] uppercase tracking-wider font-semibold">
+                              · {f.source}
+                            </span>
+                          )}
                         </div>
 
                         <button
                           onClick={() => toggleUnderstood(idx)}
                           className={`text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all ${
                             isUnderstood
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                              ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                              : 'bg-[var(--cg-surface-soft)] hover:bg-[var(--cg-border)] text-[var(--cg-text)] border border-[var(--cg-border)]'
                           }`}
                         >
-                          <CheckCircle2 size={14} className={isUnderstood ? 'text-emerald-600' : 'text-slate-400'} />
+                          <CheckCircle2 size={14} className={isUnderstood ? 'text-emerald-500' : 'text-[var(--cg-muted)]'} />
                           {isUnderstood ? 'Learned & Understood' : 'Mark as Understood'}
                         </button>
                       </div>
 
                       <h3 className="lesson-card__title">{f.title}</h3>
 
-                      {/* Educational Explanation */}
-                      <div className="lesson-card__explanation">
-                        <strong>Anteater Coach Lesson:</strong> {details.lesson}
+                      {/* Real Finding Description */}
+                      {f.description ? (
+                        <div className="lesson-card__explanation">
+                          <strong>Issue Details:</strong> {f.description}
+                        </div>
+                      ) : null}
+
+                      {/* Pedagogical Anteater Lesson */}
+                      <div className="lesson-card__coaching">
+                        <GraduationCap size={16} className="text-indigo-500 shrink-0 mt-0.5" />
+                        <div>
+                          <strong>Anteater Coach Lesson:</strong> {details.lesson}
+                        </div>
                       </div>
 
                       {/* Code File & Location Pill */}
-                      <div className="flex items-center gap-2 text-xs text-slate-600 font-mono bg-slate-50 border border-slate-100 p-2.5 rounded-lg overflow-x-auto">
-                        <FileCode size={14} className="text-indigo-600 flex-shrink-0" />
-                        <span className="font-semibold text-slate-800">{f.file_path || 'general-repository'}</span>
-                        {f.line_number && <span className="text-indigo-600 font-bold">:Line {f.line_number}</span>}
-                      </div>
-
-                      {/* Suggested Fix Mock Diff Preview for Learning */}
-                      <div className="lesson-card__diff">
-                        <div className="text-[11px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider flex items-center gap-1">
-                          <Sparkles size={12} className="text-indigo-400" /> Recommended Best Practice Fix:
+                      {f.file_path && (
+                        <div className="lesson-card__file">
+                          <FileCode size={14} className="text-indigo-500 shrink-0" />
+                          <span className="font-semibold text-[var(--cg-text)]">{f.file_path}</span>
+                          {f.line_number && (
+                            <span className="text-indigo-500 font-bold">
+                              :Line {f.line_number}{f.end_line && f.end_line !== f.line_number ? `-${f.end_line}` : ''}
+                            </span>
+                          )}
                         </div>
-                        <span className="diff-del">- // Old pattern: potential vulnerability or missing safeguard</span>
-                        <span className="diff-add">+ // Clean pattern: proper validation, explicit error handling, and robust checks</span>
-                      </div>
+                      )}
+
+                      {/* Real Engine Recommendation / Suggested Fix */}
+                      {f.recommendation ? (
+                        <div className="lesson-card__recommendation">
+                          <div className="lesson-card__rec-title">
+                            <Sparkles size={13} className="text-indigo-400" /> Recommended Actionable Fix:
+                          </div>
+                          <div className="lesson-card__rec-body">
+                            {f.recommendation}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="lesson-card__tip">
+                          <Sparkles size={13} className="text-amber-500 shrink-0" />
+                          <span>Review the flagged logic in <code>{f.file_path || 'the source code'}</code> against the {details.concept.toLowerCase()} checklist.</span>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="table-wrapper" style={{ boxShadow: 'none', border: '1px solid #f1f5f9' }}>
+              <div className="table-wrapper" style={{ boxShadow: 'none' }}>
                 <table className="cg-table">
                   <thead>
                     <tr>
@@ -462,9 +492,9 @@ export function PullRequestDetail() {
                           </Badge>
                         </td>
                         <td className="cell-primary font-medium">{f.title}</td>
-                        <td>{f.category}</td>
-                        <td className="cell-muted" style={{ fontFamily: 'monospace', fontSize: '12px' }}>{f.file_path}</td>
-                        <td className="cell-muted">{f.line_number}</td>
+                        <td className="text-[var(--cg-text-secondary)]">{f.category}</td>
+                        <td className="cell-muted font-mono text-xs">{f.file_path || 'general-repository'}</td>
+                        <td className="cell-muted">{f.line_number ?? '—'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -478,10 +508,10 @@ export function PullRequestDetail() {
                 alt="Flawless Quality"
                 className="w-28 h-28 mx-auto rounded-2xl shadow-md object-cover mb-4"
               />
-              <h3 className="font-bold text-lg text-slate-800">
+              <h3 className="font-bold text-lg text-[var(--cg-text)]">
                 {!analysis ? 'Analysis not run.' : analysis.status !== 'COMPLETED' ? 'Findings unavailable until analysis completes.' : '100% Clean! Zero Findings Recorded.'}
               </h3>
-              <p className="text-sm text-slate-500 max-w-md mx-auto mt-1">
+              <p className="text-sm text-[var(--cg-muted)] max-w-md mx-auto mt-1">
                 {!analysis ? 'Trigger an analysis to examine this PR.' : analysis.status !== 'COMPLETED' ? 'Analysis is currently processing.' : 'Great job! This pull request meets all quality and security standards without any detected issues.'}
               </p>
             </div>
@@ -501,7 +531,7 @@ export function PullRequestDetail() {
                 <div className="breakdown-row__label">{comp.category}</div>
                 <div className="breakdown-row__score" style={{
                   color: comp.score == null ? 'var(--cg-muted)' : comp.score >= 80 ? 'var(--cg-green)' : comp.score >= 60 ? 'var(--cg-amber)' : 'var(--cg-red)'
-                }}>{comp.score == null ? 'Unavailable' : formatScore(comp.score)}</div>
+                }}>{comp.score == null ? '—' : formatScore(comp.score)}</div>
                 <div className="breakdown-row__bar">
                   <div className="progress-bar">
                     <div
@@ -510,7 +540,7 @@ export function PullRequestDetail() {
                     />
                   </div>
                 </div>
-                <div className="breakdown-row__weight">×{comp.weight?.toFixed(1) || '—'}</div>
+                <div className="breakdown-row__weight">{comp.weight ? `×${comp.weight.toFixed(1)}` : '—'}</div>
               </div>
             ))}
             {(!quality?.components || quality.components.length === 0) && (
@@ -531,7 +561,7 @@ export function PullRequestDetail() {
                 <div className="breakdown-row__label">{comp.category}</div>
                 <div className="breakdown-row__score" style={{
                   color: comp.score == null ? 'var(--cg-muted)' : comp.score >= 75 ? 'var(--cg-red)' : comp.score >= 50 ? 'var(--cg-amber)' : 'var(--cg-green)'
-                }}>{comp.score == null ? 'Unavailable' : formatScore(comp.score)}</div>
+                }}>{comp.score == null ? '—' : formatScore(comp.score)}</div>
                 <div className="breakdown-row__bar">
                   <div className="progress-bar">
                     <div

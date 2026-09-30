@@ -71,12 +71,12 @@ export function RepositoryDetail() {
   return (
     <div className="page-stack">
       {/* Breadcrumb Navigation */}
-      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
-        <Link to="/repositories" className="hover:text-indigo-600 flex items-center gap-1">
+      <div className="flex items-center gap-2 text-xs font-semibold text-[var(--cg-muted)]">
+        <Link to="/repositories" className="hover:text-[var(--cg-primary)] flex items-center gap-1">
           <ArrowLeft size={14} /> Repositories
         </Link>
         <span>/</span>
-        <span className="text-slate-800 font-bold">Details</span>
+        <span className="text-[var(--cg-text)] font-bold">Details</span>
       </div>
 
       {/* HERO */}
@@ -86,17 +86,17 @@ export function RepositoryDetail() {
             <Badge variant={repository.active ? 'success' : 'default'}>
               {repository.active ? 'Active Repository' : 'Inactive'}
             </Badge>
-            <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded">
+            <span className="text-xs font-semibold text-[var(--cg-text-secondary)] bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)] px-2 py-0.5 rounded">
               {repository.provider}
             </span>
           </div>
           <h1 className="page-hero__title flex items-center gap-2.5">
-            <FolderGit2 size={26} className="text-indigo-600" />
+            <FolderGit2 size={26} className="text-indigo-500" />
             {repository.name}
           </h1>
           <div className="page-hero__desc">
             {health?.last_analysis_at && (
-              <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+              <span className="inline-flex items-center gap-1.5 text-xs text-[var(--cg-muted)]">
                 <Clock size={13} className="text-indigo-500" />
                 Last analyzed: {formatDate(health.last_analysis_at)}
               </span>
@@ -255,7 +255,7 @@ export function RepositoryDetail() {
         </div>
         <div className="dashboard-panel__body">
           {recent_prs && recent_prs.length > 0 ? (
-            <div className="table-wrapper" style={{ boxShadow: 'none', border: '1px solid #f1f5f9' }}>
+            <div className="table-wrapper" style={{ boxShadow: 'none', border: '1px solid var(--cg-border)' }}>
               <table className="cg-table">
                 <thead>
                   <tr>

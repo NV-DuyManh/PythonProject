@@ -148,18 +148,18 @@ export function Overview() {
         <div className="relative overflow-hidden">
           <dt className="flex items-center justify-between">
             <span>Average quality</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">Health</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--cg-primary-light)] text-[var(--cg-primary)]">Health</span>
           </dt>
-          <dd className="text-indigo-600">{formatScore(d.average_quality_score)}</dd>
+          <dd className="text-indigo-500">{formatScore(d.average_quality_score)}</dd>
           <small>Score out of 100</small>
         </div>
 
         <div>
           <dt className="flex items-center justify-between">
             <span>Average risk</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Safety</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--cg-amber-bg)] text-amber-600 dark:text-amber-400">Safety</span>
           </dt>
-          <dd className={(d.average_risk_score ?? 0) > 50 ? 'text-amber-600' : 'text-slate-800'}>
+          <dd className={(d.average_risk_score ?? 0) > 50 ? 'text-amber-500' : 'text-[var(--cg-text)]'}>
             {formatScore(d.average_risk_score)}
           </dd>
           <small>Lower is better</small>
@@ -168,7 +168,7 @@ export function Overview() {
         <div>
           <dt className="flex items-center justify-between">
             <span>Open pull requests</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">Queue</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--cg-surface-soft)] text-[var(--cg-text-secondary)] border border-[var(--cg-border-soft)]">Queue</span>
           </dt>
           <dd>{d.open_pull_requests ?? 'N/A'}</dd>
           <small>{d.pull_requests_total ?? 'N/A'} pull requests in workspace</small>
@@ -177,9 +177,9 @@ export function Overview() {
         <div>
           <dt className="flex items-center justify-between">
             <span>Policy block rate</span>
-            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700">Enforcement</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[var(--cg-red-bg)] text-[var(--cg-red)]">Enforcement</span>
           </dt>
-          <dd className={(d.policy_block_rate ?? 0) > 0 ? 'text-rose-600' : 'text-emerald-600'}>
+          <dd className={(d.policy_block_rate ?? 0) > 0 ? 'text-rose-500' : 'text-emerald-500'}>
             {formatPercentage(d.policy_block_rate)}
           </dd>
           <small>{d.policy_block_count ?? 'N/A'} blocked evaluations</small>
@@ -225,7 +225,7 @@ export function Overview() {
           <div className="flex items-center gap-2">
             <h2>Needs attention</h2>
             {attention && attention.length > 0 && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[var(--cg-amber-bg)] text-amber-600 dark:text-amber-400">
                 {attention.length}
               </span>
             )}
@@ -238,10 +238,10 @@ export function Overview() {
         ) : !attention ? (
           <p className="alert">Pull requests are unavailable. Refresh to try again.</p>
         ) : attention.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-white border border-slate-200/80 text-center flex flex-col items-center gap-2">
+          <div className="p-6 rounded-2xl bg-[var(--cg-surface)] border border-[var(--cg-border)] text-center flex flex-col items-center gap-2">
             <CheckCircle2 size={32} className="text-emerald-500" />
-            <p className="font-semibold text-slate-800">All clear! No pending blockers or failed analyses.</p>
-            <p className="text-xs text-slate-400">All recent pull requests are meeting quality guidelines.</p>
+            <p className="font-semibold text-[var(--cg-text)]">All clear! No pending blockers or failed analyses.</p>
+            <p className="text-xs text-[var(--cg-muted)]">All recent pull requests are meeting quality guidelines.</p>
           </div>
         ) : (
           <div className="table-wrapper">

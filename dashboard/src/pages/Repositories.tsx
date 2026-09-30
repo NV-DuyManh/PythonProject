@@ -91,13 +91,13 @@ export function Repositories() {
               {data.map((repo) => (
                 <tr key={repo.repository_id}>
                   <td>
-                    <Link to={`/repositories/${repo.repository_id}`} className="cell-link font-semibold text-slate-900 flex items-center gap-2">
-                      <FolderGit2 size={16} className="text-indigo-600 flex-shrink-0" />
-                      {repo.name}
+                    <Link to={`/repositories/${repo.repository_id}`} className="cell-link font-semibold text-[var(--cg-text)] flex items-center gap-2 hover:text-[var(--cg-primary)]">
+                      <FolderGit2 size={16} className="text-indigo-500 shrink-0" />
+                      <span>{repo.name}</span>
                     </Link>
                   </td>
                   <td>
-                    <span className="text-xs font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                    <span className="text-xs font-semibold text-[var(--cg-text-secondary)] bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)] px-2 py-0.5 rounded">
                       {repo.provider}
                     </span>
                   </td>
@@ -111,7 +111,7 @@ export function Repositories() {
                     )}
                   </td>
                   <td>
-                    <span className="font-bold text-slate-800">{repo.open_pr_count ?? 0}</span>
+                    <span className="font-bold text-[var(--cg-text)]">{repo.open_pr_count ?? 0}</span>
                   </td>
                   <td>
                     {repo.average_quality !== null ? (
@@ -132,12 +132,12 @@ export function Repositories() {
                     )}
                   </td>
                   <td>
-                    <span className="font-mono">
+                    <span className="font-mono text-[var(--cg-text)]">
                       {repo.block_rate !== null ? formatPercentage(repo.block_rate) : 'N/A'}
                     </span>
                   </td>
                   <td>
-                    <span className="font-mono">
+                    <span className="font-mono text-[var(--cg-text)]">
                       {repo.test_pass_rate !== null ? formatPercentage(repo.test_pass_rate) : 'N/A'}
                     </span>
                   </td>

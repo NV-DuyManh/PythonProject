@@ -120,20 +120,20 @@ export function PullRequests() {
               {filtered.map((pr) => (
                 <tr key={pr.pull_request_id}>
                   <td>
-                    <Link to={`/pull-requests/${pr.pull_request_id}`} className="cell-link font-semibold text-slate-900">
+                    <Link to={`/pull-requests/${pr.pull_request_id}`} className="cell-link font-semibold text-[var(--cg-text)] hover:text-[var(--cg-primary)]">
                       {pr.title}
                     </Link>
                     <div className="cell-muted" style={{ marginTop: '2px' }}>
-                      <span className="font-bold text-indigo-600">#{pr.number}</span> · {pr.state}
+                      <span className="font-bold text-indigo-500">#{pr.number}</span> · {pr.state}
                     </div>
                   </td>
-                  <td className="font-medium text-slate-700">{pr.repository}</td>
+                  <td className="font-medium text-[var(--cg-text-secondary)]">{pr.repository}</td>
                   <td>
                     <div className="flex items-center gap-2">
-                      <span className="w-6 h-6 rounded-full bg-slate-100 border border-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center">
+                      <span className="w-6 h-6 rounded-full bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)] text-[var(--cg-text)] text-xs font-bold flex items-center justify-center">
                         {pr.author?.charAt(0)?.toUpperCase() || '?'}
                       </span>
-                      <span>{pr.author}</span>
+                      <span className="text-[var(--cg-text)]">{pr.author}</span>
                     </div>
                   </td>
                   <td>

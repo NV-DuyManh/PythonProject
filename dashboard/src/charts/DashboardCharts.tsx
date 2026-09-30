@@ -58,7 +58,7 @@ export function PolicyDonutChart({
       ) : (
         <div className="policy-donut-layout">
           {/* Donut Container with centered metric */}
-          <div className="relative w-44 h-44 flex items-center justify-center shrink-0">
+          <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Tooltip
@@ -86,8 +86,8 @@ export function PolicyDonutChart({
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={52}
-                  outerRadius={74}
+                  innerRadius={46}
+                  outerRadius={66}
                   paddingAngle={chartData.length > 1 ? 4 : 0}
                   cornerRadius={chartData.length > 1 ? 5 : 0}
                   dataKey="value"
@@ -357,7 +357,199 @@ export function QualityRiskTrendChart({
 }
 
 // -------------------------------------------------------------
-// 3. LEGACY COMPATIBLE TREND CHART (Standardized)
+// 3. SINGLE METRIC TREND CHART (Quality History / Risk History)
+// -------------------------------------------------------------
+export interface SingleMetricTrendChartProps {
+  title: string;
+  metricName: string;
+  metricKey: 'quality' | 'risk';
+  metricColor: string;
+  gradientId: string;
+  prs?: any[];
+  trendPoints?: TrendPoint[];
+  yDomain?: [number, number];
+  emptyText?: string;
+}
+
+export function SingleMetricTrendChart({
+  title,
+  metricName,
+  metricKey,
+  metricColor,
+  gradientId,
+  prs = [],
+  trendPoints = [],
+  yDomain = [0, 100],
+  emptyText = 'No historical data available',
+}: SingleMetricTrendChartProps) {
+  const id = useId();
+
+  // Extract PR data points with score for this specific metric
+  const prPoints = (prs || [])
+    .filter(pr => (metricKey === 'quality' ? pr.quality_score != null : pr.risk_score != null))
+    .map(pr => ({
+      name: `#${pr.number}`,
+      label: `PR #${pr.number}`,
+      title: pr.title || `Pull Request #${pr.number}`,
+      author: pr.author || 'unknown',
+      value: metricKey === 'quality'
+        ? (pr.quality_score != null ? Math.round(pr.quality_score * 10) / 10 : null)
+        : (pr.risk_score != null ? Math.round(pr.risk_score * 10) / 10 : null),
+      date: pr.created_at ? pr.created_at.slice(0, 10) : '',
+    }))
+    .reverse();
+
+  // Daily trend points
+  const dailyData = (trendPoints || []).map(p => ({
+    name: p.date,
+    label: p.date,
+    title: '',
+    author: '',
+    date: p.date,
+    value: p.value != null ? Math.round(p.value * 10) / 10 : null,
+  }));
+
+  const hasPrData = prPoints.length > 0;
+  const [viewMode, setViewMode] = useState<'pr' | 'daily'>(hasPrData ? 'pr' : 'daily');
+
+  const chartData = viewMode === 'pr' && hasPrData ? prPoints : dailyData;
+  const xKey = viewMode === 'pr' && hasPrData ? 'name' : 'date';
+
+  return (
+    <section className="dashboard-panel" aria-labelledby={id}>
+      <div className="section-heading flex items-center justify-between">
+        <div>
+          <h2 id={id}>{title}</h2>
+          <span className="muted">
+            {viewMode === 'pr' ? `${prPoints.length} pull requests timeline` : 'Daily averages'}
+          </span>
+        </div>
+
+        {hasPrData && (
+          <div className="chart-view-toggle">
+            <button
+              type="button"
+              onClick={() => setViewMode('pr')}
+              className={`chart-view-btn ${viewMode === 'pr' ? 'chart-view-btn--active' : ''}`}
+            >
+              By PR
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('daily')}
+              className={`chart-view-btn ${viewMode === 'daily' ? 'chart-view-btn--active' : ''}`}
+            >
+              Daily
+            </button>
+          </div>
+        )}
+      </div>
+
+      {chartData.length === 0 ? (
+        <div className="chart-empty">{emptyText}</div>
+      ) : (
+        <>
+          <div className="chart-frame" style={{ height: 230 }}>
+            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+              <AreaChart data={chartData} margin={{ top: 12, right: 14, left: -22, bottom: 4 }}>
+                <defs>
+                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={metricColor} stopOpacity={0.25} />
+                    <stop offset="100%" stopColor={metricColor} stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid vertical={false} stroke="var(--cg-border-soft)" strokeDasharray="3 3" />
+                <XAxis
+                  dataKey={xKey}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: 'var(--cg-muted)' }}
+                  minTickGap={20}
+                />
+                <YAxis
+                  domain={yDomain}
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{ fontSize: 12, fill: 'var(--cg-muted)' }}
+                />
+                <Tooltip
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const item = payload[0].payload;
+                      return (
+                        <div className="chart-tooltip">
+                          <div className="chart-tooltip__title">
+                            {viewMode === 'pr' && item.title ? (
+                              <div>
+                                <span style={{ color: metricColor, fontWeight: 700 }}>{item.label}</span>
+                                <p style={{ color: '#cbd5e1', fontWeight: 400, margin: '2px 0 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+                                  {item.title}
+                                </p>
+                              </div>
+                            ) : (
+                              <span>{label}</span>
+                            )}
+                          </div>
+                          <div className="chart-tooltip__item">
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 6, color: metricColor }}>
+                              <span style={{ width: 8, height: 8, borderRadius: '50%', background: metricColor }} />
+                              {metricName}:
+                            </span>
+                            <strong style={{ color: '#ffffff' }}>{item.value ?? 'N/A'}</strong>
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  name={metricName}
+                  stroke={metricColor}
+                  strokeWidth={2.5}
+                  fill={`url(#${gradientId})`}
+                  dot={{ r: 3.5, fill: metricColor, strokeWidth: 1.5, stroke: '#ffffff' }}
+                  activeDot={{ r: 6, fill: metricColor, stroke: '#ffffff', strokeWidth: 2 }}
+                  connectNulls={true}
+                  isAnimationActive={true}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+
+          <details className="chart-data mt-2">
+            <summary className="text-xs cursor-pointer text-slate-500 hover:text-slate-800 dark:hover:text-slate-200">
+              View chart data
+            </summary>
+            <div className="table-wrapper mt-2">
+              <table className="cg-table">
+                <thead>
+                  <tr>
+                    <th>{viewMode === 'pr' ? 'Pull Request' : 'Date'}</th>
+                    <th>{metricName}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {chartData.map((row, i) => (
+                    <tr key={i}>
+                      <td>{String(row[xKey])}</td>
+                      <td>{formatScore(row.value as number | null)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        </>
+      )}
+    </section>
+  );
+}
+
+// -------------------------------------------------------------
+// 4. LEGACY COMPATIBLE TREND CHART (Standardized)
 // -------------------------------------------------------------
 export function TrendChart({ title, series }: { title: string; series: Series[] }) {
   const id = useId();

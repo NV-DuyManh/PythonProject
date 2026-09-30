@@ -126,16 +126,16 @@ export function AcceptInvite() {
       mascotImage="/mascot/mascot-welcome.jpg"
     >
       <div className="form-stack">
-        <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-100">
-          <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Your Assigned Role</span>
-          <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-md border border-indigo-100">
+        <div className="flex items-center justify-between p-3 rounded-xl bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)]">
+          <span className="text-xs font-semibold text-[var(--cg-muted)] uppercase tracking-wider">Your Assigned Role</span>
+          <span className="text-xs font-bold text-[var(--cg-primary)] bg-[var(--cg-primary-light)] px-2.5 py-1 rounded-md border border-indigo-500/20">
             {invitation?.role}
           </span>
         </div>
 
         {!authenticated ? (
           <>
-            <p className="text-xs text-slate-500 text-center font-medium">
+            <p className="text-xs text-[var(--cg-muted)] text-center font-medium">
               Log in to accept this invitation.
             </p>
             <Button onClick={handleAccept} className="w-full">
@@ -145,14 +145,14 @@ export function AcceptInvite() {
           </>
         ) : (
           <>
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-indigo-50/40 border border-indigo-100">
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
               {user?.avatar_url ? (
                 <img src={user.avatar_url} className="avatar" alt="" />
               ) : (
                 <span className="avatar">{user?.username?.charAt(0).toUpperCase() || 'U'}</span>
               )}
               <div>
-                <p className="font-semibold text-slate-900 text-sm">Logged in as {user?.display_name || user?.username}</p>
+                <p className="font-semibold text-[var(--cg-text)] text-sm">Logged in as {user?.display_name || user?.username}</p>
                 <p className="muted text-xs">This account will join the workspace</p>
               </div>
             </div>

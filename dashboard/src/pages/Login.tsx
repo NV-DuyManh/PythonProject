@@ -46,21 +46,21 @@ export function Login() {
           Authentication is handled by GitHub.
         </p>
 
-        <div className="border-t border-slate-100 pt-4 mt-2 grid grid-cols-3 gap-2 text-center">
-          <div className="p-2 rounded-xl bg-slate-50 border border-slate-100/80">
-            <Sparkles size={16} className="mx-auto text-indigo-600 mb-1" />
-            <div className="text-[11px] font-bold text-slate-800">Smart PRs</div>
-            <div className="text-[10px] text-slate-400">Automated AI scan</div>
+        <div className="border-t border-[var(--cg-border-soft)] pt-4 mt-2 grid grid-cols-3 gap-2 text-center">
+          <div className="p-2 rounded-xl bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)]">
+            <Sparkles size={16} className="mx-auto text-indigo-500 mb-1" />
+            <div className="text-[11px] font-bold text-[var(--cg-text)]">Smart PRs</div>
+            <div className="text-[10px] text-[var(--cg-muted)]">Automated AI scan</div>
           </div>
-          <div className="p-2 rounded-xl bg-slate-50 border border-slate-100/80">
-            <BookOpen size={16} className="mx-auto text-purple-600 mb-1" />
-            <div className="text-[11px] font-bold text-slate-800">Lessons</div>
-            <div className="text-[10px] text-slate-400">Best practice tips</div>
+          <div className="p-2 rounded-xl bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)]">
+            <BookOpen size={16} className="mx-auto text-purple-500 mb-1" />
+            <div className="text-[11px] font-bold text-[var(--cg-text)]">Lessons</div>
+            <div className="text-[10px] text-[var(--cg-muted)]">Best practice tips</div>
           </div>
-          <div className="p-2 rounded-xl bg-slate-50 border border-slate-100/80">
-            <Shield size={16} className="mx-auto text-emerald-600 mb-1" />
-            <div className="text-[11px] font-bold text-slate-800">Policy Gate</div>
-            <div className="text-[10px] text-slate-400">Block bad commits</div>
+          <div className="p-2 rounded-xl bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)]">
+            <Shield size={16} className="mx-auto text-emerald-500 mb-1" />
+            <div className="text-[11px] font-bold text-[var(--cg-text)]">Policy Gate</div>
+            <div className="text-[10px] text-[var(--cg-muted)]">Block bad commits</div>
           </div>
         </div>
       </div>

@@ -188,13 +188,13 @@ export function WorkspaceMembers() {
                       </div>
                     )}
                     <div>
-                      <div className="font-medium text-foreground">
+                      <div className="font-medium text-[var(--cg-text)]">
                         {member.display_name || member.github_login}
                         {member.user_id === currentUser?.id && (
-                          <span className="ml-2 text-[10px] font-semibold bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-wider">You</span>
+                          <span className="ml-2 text-[10px] font-semibold bg-[var(--cg-surface-soft)] text-[var(--cg-muted)] border border-[var(--cg-border-soft)] px-2 py-0.5 rounded-full uppercase tracking-wider">You</span>
                         )}
                       </div>
-                      <div className="text-slate-500 text-xs font-medium">@{member.github_login}</div>
+                      <div className="text-[var(--cg-muted)] text-xs font-medium">@{member.github_login}</div>
                     </div>
                   </div>
                 </td>
@@ -204,7 +204,7 @@ export function WorkspaceMembers() {
                       aria-label={`Role for ${member.github_login}`}
                       value={member.role}
                       onChange={(e) => handleRoleChange(member.user_id, e.target.value)}
-                      className="bg-white border border-slate-200 text-slate-900 font-medium text-sm rounded-lg focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 block px-3 py-1.5 outline-none transition-all "
+                      className="bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)] text-[var(--cg-text)] font-medium text-sm rounded-lg focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 block px-3 py-1.5 outline-none transition-all"
                     >
                       {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
@@ -221,7 +221,7 @@ export function WorkspaceMembers() {
                   {isAdmin && member.user_id !== currentUser?.id && (
                     <button 
                       onClick={() => handleRemoveMember(member.user_id)}
-                      className="text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors p-2"
+                      className="text-slate-400 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition-colors p-2"
                       title="Remove member"
                     >
                       <Trash2 size={16} />
@@ -237,7 +237,7 @@ export function WorkspaceMembers() {
       {/* Pending Invitations */}
       {canInvite && invitations.length > 0 && (
         <>
-          <h3 className="text-lg font-semibold text-slate-900 mb-2 mt-4 flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-[var(--cg-text)] mb-2 mt-4 flex items-center gap-2">
             <Mail size={18} className="text-blue-500" />
             Pending Invitations
           </h3>
@@ -254,11 +254,11 @@ export function WorkspaceMembers() {
               <tbody>
                 {invitations.map(inv => (
                   <tr key={inv.id}>
-                    <td className="font-medium text-slate-900">
+                    <td className="font-medium text-[var(--cg-text)]">
                       {inv.invitee_github_login ? `@${inv.invitee_github_login}` : (inv.invitee_email || 'Anyone with link')}
                     </td>
                     <td>
-                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide bg-slate-100 text-slate-600 border border-slate-200">
+                      <span className="px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide bg-[var(--cg-surface-soft)] text-[var(--cg-text-secondary)] border border-[var(--cg-border-soft)]">
                         {inv.role}
                       </span>
                     </td>
@@ -344,29 +344,29 @@ export function WorkspaceMembers() {
             ) : (
               <form onSubmit={handleCreateInvite} className="form-stack">
                 <div>
-                  <label htmlFor="invite-login" className="block text-sm font-medium text-foreground mb-2">
-                    GitHub Username <span className="text-slate-400 font-medium">(Optional)</span>
+                  <label htmlFor="invite-login" className="block text-sm font-medium text-[var(--cg-text)] mb-2">
+                    GitHub Username <span className="text-[var(--cg-muted)] font-medium">(Optional)</span>
                   </label>
                   <input id="invite-login"
                     type="text"
                     value={inviteLogin}
                     onChange={(e) => setInviteLogin(e.target.value)}
                     placeholder="e.g. octocat"
-                    className="w-full bg-white border border-slate-200 rounded-md px-4 py-3.5 text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 transition-all "
+                    className="w-full bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)] rounded-md px-4 py-3 text-[var(--cg-text)] font-medium placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 transition-all"
                   />
-                  <p className="text-xs font-medium text-slate-500 mt-2">
+                  <p className="text-xs font-medium text-[var(--cg-muted)] mt-2">
                     If provided, only this GitHub user can accept the invitation.
                   </p>
                 </div>
                 
                 <div>
-                  <label htmlFor="invite-role" className="block text-sm font-medium text-foreground mb-2">
+                  <label htmlFor="invite-role" className="block text-sm font-medium text-[var(--cg-text)] mb-2">
                     Role
                   </label>
                   <select id="invite-role"
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value)}
-                    className="w-full bg-white border border-slate-200 rounded-md px-4 py-3.5 text-slate-900 font-medium focus:outline-none focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 transition-all  appearance-none"
+                    className="w-full bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)] rounded-md px-4 py-3 text-[var(--cg-text)] font-medium focus:outline-none focus:ring-4 focus:ring-blue-600/10 focus:border-blue-600 transition-all appearance-none"
                     style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: `right 0.5rem center`, backgroundRepeat: `no-repeat`, backgroundSize: `1.5em 1.5em`, paddingRight: `2.5rem` }}
                   >
                     {availableRoles.map(r => <option key={r} value={r}>{r}</option>)}
@@ -378,7 +378,7 @@ export function WorkspaceMembers() {
                     type="button" 
                     variant="ghost" 
                     onClick={() => setShowInviteModal(false)}
-                    className="font-semibold text-slate-600 hover:text-slate-900"
+                    className="font-semibold text-[var(--cg-muted)] hover:text-[var(--cg-text)]"
                   >
                     Cancel
                   </Button>
