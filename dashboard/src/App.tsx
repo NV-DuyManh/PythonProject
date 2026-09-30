@@ -14,12 +14,13 @@ import { Integrations } from './pages/Integrations';
 import { GitHubIntegration } from './pages/GitHubIntegration';
 import { WorkspaceMembers } from './pages/WorkspaceMembers';
 import { AcceptInvite } from './pages/AcceptInvite';
+import { Skeleton } from './components/ui/Skeleton';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authenticated, loading, workspaces } = useAuth();
   const location = useLocation();
 
-  if (loading) return null;
+  if (loading) return <div className="content"><Skeleton className="h-16 w-full" /></div>;
 
   if (!authenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

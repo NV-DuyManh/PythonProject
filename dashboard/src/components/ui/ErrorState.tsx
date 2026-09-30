@@ -17,6 +17,7 @@ export function ErrorState({
 }: ErrorStateProps) {
   return (
     <div
+      role="alert"
       className={cn('error-state', className)}
       {...props}
     >

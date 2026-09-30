@@ -1,43 +1,94 @@
-import { Link } from 'react-router-dom';
-import { GitBranch } from 'lucide-react';
+import { Link, useOutletContext } from 'react-router-dom';
+import { GitBranch, ArrowRight, MessageSquare, Terminal } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { CodeGateAPI } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { PageHeader } from '../components/ui/PageHeader';
+import { Badge } from '../components/ui/Badge';
 
 export function Integrations() {
   const { workspaceVersion } = useAuth();
+  const system = useOutletContext<{ sysStatus: any; apiError: boolean } | undefined>();
   const [ghStatus, setGhStatus] = useState<string>('Checking...');
 
   useEffect(() => {
-    CodeGateAPI.getSystemStatus().then((sys: any) => {
-      if (sys?.github?.status === 'CONNECTED') {
-        setGhStatus('Configured');
-      } else {
-        setGhStatus('Not Configured');
-      }
-    }).catch(() => setGhStatus('Unknown'));
-  }, [workspaceVersion]);
+    if (system) {
+      setGhStatus(
+        system.apiError
+          ? 'Unavailable'
+          : !system.sysStatus
+          ? 'Checking...'
+          : system.sysStatus.github?.status === 'CONNECTED'
+          ? 'Configured'
+          : 'Not Configured'
+      );
+      return;
+    }
+    CodeGateAPI.getSystemStatus()
+      .then((sys: any) => {
+        setGhStatus(sys?.github?.status === 'CONNECTED' ? 'Configured' : 'Not Configured');
+      })
+      .catch(() => setGhStatus('Unavailable'));
+  }, [workspaceVersion, system]);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="page-hero">
-        <div className="page-hero__content">
-          <p className="page-hero__kicker">INTEGRATIONS</p>
-          <h2 className="page-hero__title">Connected Services</h2>
-          <p className="page-hero__desc">Manage your VCS providers, CI/CD, and identity services.</p>
-        </div>
-      </div>
+    <div className="page-stack">
+      <PageHeader
+        title="Integrations"
+        description="Connect your git providers, CI/CD runners, and notification channels to power automated reviews."
+      />
 
-      <div className="dashboard-grid dashboard-grid--stats">
-        <Link to="/integrations/github" className="stat-card" style={{ textDecoration: 'none', cursor: 'pointer', transition: 'transform 0.15s, box-shadow 0.15s' }}>
-          <div className="stat-card__icon"><GitBranch size={28} strokeWidth={1.8} /></div>
-          <div className="stat-card__body">
-            <div className="stat-card__label">GitHub App</div>
-            <div className="stat-card__value" style={{ fontSize: '20px' }}>{ghStatus}</div>
-            <div className="stat-card__note">Manage repositories and permissions</div>
+      <div className="grid grid-cols-1 gap-4">
+        {/* Active GitHub Integration */}
+        <Link className="service-row group" to="/integrations/github">
+          <div className="w-14 h-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center flex-shrink-0 shadow-md group-hover:scale-105 transition-transform">
+            <GitBranch size={28} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-base font-bold text-slate-900">GitHub App</h2>
+              <Badge variant={ghStatus === 'Configured' ? 'success' : 'default'}>
+                {ghStatus === 'Configured' ? 'Active' : 'Setup Required'}
+              </Badge>
+            </div>
+            <p className="muted text-sm">Automated webhooks, repository sync, and pull request analysis bot.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-bold text-slate-500" role="status">
+              {ghStatus}
+            </span>
+            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
+              <ArrowRight size={16} />
+            </div>
           </div>
         </Link>
 
+        {/* Coming Soon Preview Integrations */}
+        <div className="service-row opacity-75">
+          <div className="w-14 h-14 rounded-2xl bg-orange-50 text-orange-600 border border-orange-100 flex items-center justify-center flex-shrink-0">
+            <Terminal size={26} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-base font-bold text-slate-900">GitLab CI & Webhooks</h2>
+              <Badge variant="outline">Coming Soon</Badge>
+            </div>
+            <p className="muted text-sm">Merge request scanning and pipeline feedback for GitLab teams.</p>
+          </div>
+        </div>
+
+        <div className="service-row opacity-75">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center justify-center flex-shrink-0">
+            <MessageSquare size={26} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h2 className="text-base font-bold text-slate-900">Discord & Slack Coach Bot</h2>
+              <Badge variant="outline">Coming Soon</Badge>
+            </div>
+            <p className="muted text-sm">Daily review digests and student coaching notifications in your chat channels.</p>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -9,12 +9,12 @@ export interface PageHeaderProps extends Omit<React.HTMLAttributes<HTMLDivElemen
 
 export function PageHeader({ title, description, actions, className, ...props }: PageHeaderProps) {
   return (
-    <div className={cn('flex flex-col gap-4 md:flex-row md:items-center md:justify-between pb-6 border-b border-border/40 mb-6', className)} {...props}>
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight text-white">{title}</h1>
-        {description && <p className="text-sm text-muted">{description}</p>}
+    <div className={cn('page-header', className)} {...props}>
+      <div className="page-header__content">
+        <h1 className="page-title">{title}</h1>
+        {description && <div className="page-description">{description}</div>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {actions && <div className="page-actions">{actions}</div>}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { CodeGateAPI } from '../api/client';
 import type { PullRequestDashboardDetail } from '../types';
 import {
@@ -8,14 +8,21 @@ import {
   ShieldX,
   CheckCircle,
   FileCheck,
-  Bug,
   Users,
   RefreshCw,
+  GraduationCap,
+  Sparkles,
+  CheckCircle2,
+  Code2,
+  FileCode,
+  ArrowLeft,
+  List,
+  LayoutGrid,
 } from 'lucide-react';
 import { ErrorState } from '../components/ui/ErrorState';
 import { Skeleton } from '../components/ui/Skeleton';
 import { Badge } from '../components/ui/Badge';
-import { formatPercentage, formatScore } from '../lib/utils';
+import { formatPercentage, formatScore, formatDate } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 export function PullRequestDetail() {
@@ -25,6 +32,8 @@ export function PullRequestDetail() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
+  const [understoodFindings, setUnderstoodFindings] = useState<Record<number, boolean>>({});
 
   const load = useCallback(() => {
     if (!pullRequestId) return;
@@ -38,14 +47,18 @@ export function PullRequestDetail() {
 
   useEffect(() => { load(); }, [load, workspaceVersion]);
 
+  const toggleUnderstood = (idx: number) => {
+    setUnderstoodFindings(prev => ({ ...prev, [idx]: !prev[idx] }));
+  };
+
   if (loading) {
     return (
-      <div className="flex flex-col gap-6">
-        <Skeleton className="w-full h-[140px] rounded-[22px]" />
-        <div className="dashboard-grid dashboard-grid--5">
-          {[...Array(5)].map((_, i) => <Skeleton key={i} className="w-full h-[120px] rounded-[22px]" />)}
+      <div className="page-stack animate-pulse">
+        <Skeleton className="w-full h-20 rounded-2xl" />
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {[...Array(5)].map((_, i) => <Skeleton key={i} className="w-full h-32 rounded-2xl" />)}
         </div>
-        <Skeleton className="w-full h-[200px] rounded-[22px]" />
+        <Skeleton className="w-full h-64 rounded-2xl" />
       </div>
     );
   }
@@ -64,14 +77,14 @@ export function PullRequestDetail() {
 
   const { pr, analysis, quality, risk, policy, tests, coverage, findings, reviewer_recommendation: reviewers } = data;
   const policyDecision = policy?.decision?.toUpperCase() || 'UNKNOWN';
-  const decisionVariant = policyDecision === 'BLOCK' ? 'block' : policyDecision === 'WARNING' ? 'warning' : 'pass';
+  const decisionVariant = policyDecision === 'BLOCK' ? 'block' : policyDecision === 'WARNING' ? 'warning' : policyDecision === 'PASS' ? 'pass' : 'unknown';
 
   const handleRetry = async () => {
-    if (!analysis?.id) return;
+    if (!analysis?.analysis_id) return;
     setRetrying(true);
     try {
-      await CodeGateAPI.retryAnalysis(analysis.id);
-      load(); // Reload after enqueuing
+      await CodeGateAPI.retryAnalysis(analysis.analysis_id);
+      load();
     } catch (err: any) {
       alert(err.message || 'Failed to retry analysis');
     } finally {
@@ -81,29 +94,91 @@ export function PullRequestDetail() {
 
   const isTerminal = analysis?.status === 'FAILED' || analysis?.status === 'SKIPPED' || analysis?.status === 'COMPLETED';
 
+  // Educational lesson mapper based on finding category
+  const getConceptDetails = (category: string, _severity?: string) => {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('security') || cat.includes('auth')) {
+      return {
+        concept: 'Security & Defensive Coding',
+        lesson: 'Security issues expose software to unauthorized access or data leaks. In professional software engineering, always validate inputs, never expose sensitive tokens, and follow the principle of least privilege.',
+      };
+    }
+    if (cat.includes('perf') || cat.includes('speed')) {
+      return {
+        concept: 'Performance & Optimization',
+        lesson: 'Inefficient loops, unindexed queries, or unnecessary re-renders degrade user experience. Write algorithmic code that scales well under heavy data loads.',
+      };
+    }
+    if (cat.includes('test') || cat.includes('coverage')) {
+      return {
+        concept: 'Test Verification & Quality',
+        lesson: 'Code without automated tests is prone to silent regressions. High test coverage ensures your new features do not break existing business logic.',
+      };
+    }
+    if (cat.includes('style') || cat.includes('convention') || cat.includes('lint')) {
+      return {
+        concept: 'Code Readability & Clean Architecture',
+        lesson: 'Code is read 10x more often than it is written. Following clean naming conventions and modular functions makes it easier for teammates to review and maintain.',
+      };
+    }
+    return {
+      concept: 'Bug Prevention & Reliability',
+      lesson: 'Edge cases such as null/undefined values, unexpected type conversions, or unhandled promise rejections can cause unexpected crashes in runtime.',
+    };
+  };
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* HERO */}
+    <div className="page-stack">
+      {/* Back Link Breadcrumb */}
+      <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+        <Link to="/pull-requests" className="hover:text-indigo-600 flex items-center gap-1">
+          <ArrowLeft size={14} /> Pull Requests
+        </Link>
+        <span>/</span>
+        <span className="text-slate-800 font-bold">{pr.repository}</span>
+        <span>/</span>
+        <span>#{pr.number}</span>
+      </div>
+
+      {/* Hero Header */}
       <div className="page-hero">
         <div className="page-hero__content">
-          <p className="page-hero__kicker">PULL REQUEST ANALYSIS</p>
-          <h2 className="page-hero__title">#{pr.number} — {pr.title}</h2>
-          <p className="page-hero__desc">
-            {pr.repository} · {pr.author} · {pr.state}
-            {pr.head_branch ? ` · ${pr.head_branch}` : ''}
-            {pr.head_sha ? ` (${pr.head_sha.substring(0, 7)})` : ''}
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+              PR #{pr.number}
+            </span>
+            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+              {pr.repository}
+            </span>
             {analysis && (
-              <span style={{ marginLeft: '12px' }}>
-                <Badge variant={
-                  analysis.status === 'COMPLETED' ? 'success' :
-                  analysis.status === 'FAILED' ? 'danger' :
-                  analysis.status === 'RUNNING' ? 'indigo' :
-                  analysis.status === 'QUEUED' ? 'warning' : 'default'
-                }>{analysis.status}</Badge>
-              </span>
+              <Badge variant={
+                analysis.status === 'COMPLETED' ? 'success' :
+                analysis.status === 'FAILED' ? 'danger' :
+                analysis.status === 'RUNNING' ? 'info' :
+                analysis.status === 'QUEUED' ? 'info' : 'default'
+              }>
+                {analysis.status}
+              </Badge>
+            )}
+          </div>
+
+          <h1 className="page-hero__title">#{pr.number} — {pr.title}</h1>
+
+          <p className="page-hero__desc">
+            <span>By <strong>@{pr.author}</strong></span>
+            <span>·</span>
+            <span>State: <strong className="capitalize">{pr.state}</strong></span>
+            {pr.head_branch && (
+              <>
+                <span>·</span>
+                <span className="inline-flex items-center gap-1 font-mono text-xs bg-slate-100 px-2 py-0.5 rounded">
+                  <Code2 size={12} /> {pr.head_branch} {pr.head_sha ? `(${pr.head_sha.substring(0, 7)})` : ''}
+                </span>
+              </>
             )}
           </p>
         </div>
+
         <div className="page-hero__actions">
           {analysis && isTerminal && (
             <button className="btn-secondary" onClick={handleRetry} disabled={retrying}>
@@ -114,8 +189,38 @@ export function PullRequestDetail() {
         </div>
       </div>
 
-      {/* STATUS CARDS */}
+      {/* Meta Timestamps */}
+      <div className="flex flex-wrap gap-4 text-xs font-medium text-slate-500 bg-white border border-slate-200/80 p-3 rounded-xl">
+        <span>Analysis ID: <strong>{analysis?.analysis_id ? '#' + analysis.analysis_id : 'Not run'}</strong></span>
+        <span>•</span>
+        {analysis?.created_at && <span>Started: {formatDate(analysis.created_at)}</span>}
+        {analysis?.completed_at && (
+          <>
+            <span>•</span>
+            <span>Completed: {formatDate(analysis.completed_at)}</span>
+          </>
+        )}
+      </div>
+
+      {/* Incomplete Evidence Alert */}
+      {(quality?.is_complete === false || risk?.is_complete === false) && (
+        <div className="alert alert--error">
+          <ShieldAlert size={20} />
+          <div>
+            <strong>Incomplete evidence recorded</strong>
+            {quality?.is_complete === false && (
+              <p className="mt-1">Quality: missing {Array.isArray(quality.missing_dimensions) ? quality.missing_dimensions.join(', ') : 'dimensions not specified'}</p>
+            )}
+            {risk?.is_complete === false && (
+              <p className="mt-1">Risk: missing {Array.isArray(risk.missing_dimensions) ? risk.missing_dimensions.join(', ') : 'dimensions not specified'}</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* 5 KPI STATUS CARDS */}
       <div className="dashboard-grid dashboard-grid--5">
+        {/* Quality Card */}
         <div className="stat-card stat-card--green">
           <div className="stat-card__icon"><ShieldCheck size={26} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
@@ -130,20 +235,24 @@ export function PullRequestDetail() {
             </div>
           </div>
         </div>
+
+        {/* Risk Card */}
         <div className="stat-card stat-card--amber">
           <div className="stat-card__icon"><ShieldAlert size={26} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Risk</div>
-            <div className="stat-card__value">{formatScore(risk?.overall_score)}</div>
+            <div className="stat-card__value">{formatScore(risk?.overall_risk)}</div>
             <div className="stat-card__note">
-              {risk?.level ? (
-                <Badge variant={risk.level === 'LOW' ? 'success' : risk.level === 'MEDIUM' ? 'warning' : 'danger'}>
-                  {risk.level} Risk
+              {risk?.risk_level ? (
+                <Badge variant={risk.risk_level === 'LOW' ? 'success' : risk.risk_level === 'MEDIUM' ? 'warning' : 'danger'}>
+                  {risk.risk_level} Risk
                 </Badge>
               ) : 'N/A'}
             </div>
           </div>
         </div>
+
+        {/* Policy Decision Card */}
         <div className={`stat-card stat-card--${decisionVariant === 'block' ? 'red' : decisionVariant === 'warning' ? 'amber' : 'indigo'}`}>
           <div className="stat-card__icon">
             {policyDecision === 'BLOCK' ? <ShieldX size={26} strokeWidth={1.8} /> :
@@ -153,39 +262,53 @@ export function PullRequestDetail() {
           <div className="stat-card__body">
             <div className="stat-card__label">Policy</div>
             <div className="stat-card__value" style={{ fontSize: '24px' }}>{policyDecision}</div>
+            <div className="stat-card__note">
+              {policyDecision === 'PASS' ? 'Ready to merge' : policyDecision === 'WARNING' ? 'Review warnings' : 'Merge blocked'}
+            </div>
           </div>
         </div>
+
+        {/* Tests Card */}
         <div className="stat-card stat-card--blue">
           <div className="stat-card__icon"><CheckCircle size={26} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Tests</div>
             <div className="stat-card__value" style={{ fontSize: '24px' }}>
-              {tests ? `${tests.passed_tests ?? 0}/${tests.total_tests ?? 0}` : '—'}
+              {tests ? `${tests.passed ?? 'N/A'}/${tests.total ?? 'N/A'}` : '—'}
             </div>
             <div className="stat-card__note">
-              {tests?.failed_tests === 0 ? 'All passed' : tests ? `${tests.failed_tests} failed` : 'No tests'}
+              {tests ? (tests.total === 0 ? 'No tests recorded' : tests.test_outcome || 'Outcome unavailable') : 'Not run / unavailable'}
             </div>
           </div>
         </div>
+
+        {/* Changed Coverage Card */}
         <div className="stat-card stat-card--indigo">
           <div className="stat-card__icon"><FileCheck size={26} strokeWidth={1.8} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Changed Coverage</div>
             <div className="stat-card__value" style={{ fontSize: '24px' }}>
-              {formatPercentage(coverage?.changed_coverage)}
+              {formatPercentage(coverage?.changed_line_coverage)}
             </div>
+            <div className="stat-card__note">New code coverage</div>
           </div>
         </div>
       </div>
 
-      {/* WHY THIS DECISION */}
+      {/* POLICY EVIDENCE */}
       {policy && (
         <div className={`decision-panel decision-panel--${decisionVariant}`}>
           <div className="decision-panel__title">
             {policyDecision === 'BLOCK' ? <ShieldX size={20} /> :
              policyDecision === 'WARNING' ? <ShieldAlert size={20} /> :
              <ShieldCheck size={20} />}
-            Why this decision?
+            Policy evidence
+          </div>
+          <p className="muted mb-3">Revision {policy.policy_revision ?? 'N/A'} · Engine {policy.engine_version ?? 'N/A'}</p>
+          <div className="flex flex-wrap gap-4 mb-3 font-semibold text-xs">
+            <span className="text-emerald-700 bg-emerald-100/60 px-2 py-0.5 rounded">{policy.passed_rules ?? 'N/A'} passed rules</span>
+            <span className="text-amber-800 bg-amber-100/60 px-2 py-0.5 rounded">{policy.warning_rules ?? 'N/A'} warnings</span>
+            <span className="text-rose-700 bg-rose-100/60 px-2 py-0.5 rounded">{policy.blocked_rules ?? 'N/A'} blocked rules</span>
           </div>
           <ul className="decision-panel__reasons">
             {policy.reasons?.map((reason: string, idx: number) => (
@@ -204,6 +327,168 @@ export function PullRequestDetail() {
         </div>
       )}
 
+      {/* INTERACTIVE LESSONS & FINDINGS HUB (Mascot Coaching Experience) */}
+      <div className="dashboard-panel">
+        <div className="dashboard-panel__head flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-xl">
+              🎓
+            </div>
+            <div>
+              <div className="dashboard-panel__title flex items-center gap-2">
+                Anteater Code Lessons & Findings
+                {findings && findings.length > 0 && (
+                  <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+                    {findings.length} Lessons
+                  </span>
+                )}
+              </div>
+              <div className="dashboard-panel__meta">
+                Interactive learning & coaching feedback designed for students and developers
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 bg-slate-100 p-1 rounded-xl">
+            <button
+              onClick={() => setViewMode('cards')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                viewMode === 'cards' ? 'bg-white shadow text-indigo-700' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <LayoutGrid size={14} /> Lesson Cards
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                viewMode === 'table' ? 'bg-white shadow text-indigo-700' : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <List size={14} /> Summary Table
+            </button>
+          </div>
+        </div>
+
+        <div className="dashboard-panel__body">
+          {findings && findings.length > 0 ? (
+            viewMode === 'cards' ? (
+              <div className="grid grid-cols-1 gap-4">
+                {findings.map((f: any, idx: number) => {
+                  const details = getConceptDetails(f.category, f.severity);
+                  const isUnderstood = !!understoodFindings[idx];
+
+                  return (
+                    <div
+                      key={idx}
+                      className={`lesson-card ${isUnderstood ? 'border-emerald-200 bg-emerald-50/20' : ''}`}
+                    >
+                      <div className="lesson-card__head">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="lesson-card__concept">
+                            <GraduationCap size={14} />
+                            Lesson #{idx + 1}: {details.concept}
+                          </span>
+                          <Badge
+                            variant={
+                              f.severity === 'CRITICAL' || f.severity === 'HIGH'
+                                ? 'danger'
+                                : f.severity === 'MEDIUM'
+                                ? 'warning'
+                                : 'default'
+                            }
+                          >
+                            {f.severity}
+                          </Badge>
+                          <span className="text-xs text-slate-500 font-medium">Category: {f.category}</span>
+                        </div>
+
+                        <button
+                          onClick={() => toggleUnderstood(idx)}
+                          className={`text-xs px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1.5 transition-all ${
+                            isUnderstood
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          }`}
+                        >
+                          <CheckCircle2 size={14} className={isUnderstood ? 'text-emerald-600' : 'text-slate-400'} />
+                          {isUnderstood ? 'Learned & Understood' : 'Mark as Understood'}
+                        </button>
+                      </div>
+
+                      <h3 className="lesson-card__title">{f.title}</h3>
+
+                      {/* Educational Explanation */}
+                      <div className="lesson-card__explanation">
+                        <strong>Anteater Coach Lesson:</strong> {details.lesson}
+                      </div>
+
+                      {/* Code File & Location Pill */}
+                      <div className="flex items-center gap-2 text-xs text-slate-600 font-mono bg-slate-50 border border-slate-100 p-2.5 rounded-lg overflow-x-auto">
+                        <FileCode size={14} className="text-indigo-600 flex-shrink-0" />
+                        <span className="font-semibold text-slate-800">{f.file_path || 'general-repository'}</span>
+                        {f.line_number && <span className="text-indigo-600 font-bold">:Line {f.line_number}</span>}
+                      </div>
+
+                      {/* Suggested Fix Mock Diff Preview for Learning */}
+                      <div className="lesson-card__diff">
+                        <div className="text-[11px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider flex items-center gap-1">
+                          <Sparkles size={12} className="text-indigo-400" /> Recommended Best Practice Fix:
+                        </div>
+                        <span className="diff-del">- // Old pattern: potential vulnerability or missing safeguard</span>
+                        <span className="diff-add">+ // Clean pattern: proper validation, explicit error handling, and robust checks</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="table-wrapper" style={{ boxShadow: 'none', border: '1px solid #f1f5f9' }}>
+                <table className="cg-table">
+                  <thead>
+                    <tr>
+                      <th>Severity</th>
+                      <th>Title</th>
+                      <th>Category</th>
+                      <th>File</th>
+                      <th>Line</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {findings.map((f: any, idx: number) => (
+                      <tr key={idx}>
+                        <td>
+                          <Badge variant={f.severity === 'CRITICAL' || f.severity === 'HIGH' ? 'danger' : f.severity === 'MEDIUM' ? 'warning' : 'default'}>
+                            {f.severity}
+                          </Badge>
+                        </td>
+                        <td className="cell-primary font-medium">{f.title}</td>
+                        <td>{f.category}</td>
+                        <td className="cell-muted" style={{ fontFamily: 'monospace', fontSize: '12px' }}>{f.file_path}</td>
+                        <td className="cell-muted">{f.line_number}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          ) : (
+            <div className="text-center py-10 px-4">
+              <img
+                src="/mascot/mascot-celebrate.jpg"
+                alt="Flawless Quality"
+                className="w-28 h-28 mx-auto rounded-2xl shadow-md object-cover mb-4"
+              />
+              <h3 className="font-bold text-lg text-slate-800">
+                {!analysis ? 'Analysis not run.' : analysis.status !== 'COMPLETED' ? 'Findings unavailable until analysis completes.' : '100% Clean! Zero Findings Recorded.'}
+              </h3>
+              <p className="text-sm text-slate-500 max-w-md mx-auto mt-1">
+                {!analysis ? 'Trigger an analysis to examine this PR.' : analysis.status !== 'COMPLETED' ? 'Analysis is currently processing.' : 'Great job! This pull request meets all quality and security standards without any detected issues.'}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* QUALITY & RISK BREAKDOWN */}
       <div className="dashboard-grid dashboard-grid--bottom">
         <div className="dashboard-panel">
@@ -215,13 +500,13 @@ export function PullRequestDetail() {
               <div key={comp.category} className="breakdown-row">
                 <div className="breakdown-row__label">{comp.category}</div>
                 <div className="breakdown-row__score" style={{
-                  color: comp.score >= 80 ? 'var(--cg-green)' : comp.score >= 60 ? 'var(--cg-amber)' : 'var(--cg-red)'
-                }}>{comp.score}</div>
+                  color: comp.score == null ? 'var(--cg-muted)' : comp.score >= 80 ? 'var(--cg-green)' : comp.score >= 60 ? 'var(--cg-amber)' : 'var(--cg-red)'
+                }}>{comp.score == null ? 'Unavailable' : formatScore(comp.score)}</div>
                 <div className="breakdown-row__bar">
                   <div className="progress-bar">
                     <div
                       className={`progress-bar__fill ${comp.score >= 80 ? 'progress-bar__fill--green' : comp.score >= 60 ? 'progress-bar__fill--amber' : 'progress-bar__fill--red'}`}
-                      style={{ width: `${Math.min(comp.score, 100)}%` }}
+                      style={{ width: comp.score == null ? '0%' : `${Math.min(comp.score, 100)}%` }}
                     />
                   </div>
                 </div>
@@ -245,13 +530,13 @@ export function PullRequestDetail() {
               <div key={comp.category} className="breakdown-row">
                 <div className="breakdown-row__label">{comp.category}</div>
                 <div className="breakdown-row__score" style={{
-                  color: comp.score >= 75 ? 'var(--cg-red)' : comp.score >= 50 ? 'var(--cg-amber)' : 'var(--cg-green)'
-                }}>{comp.score}</div>
+                  color: comp.score == null ? 'var(--cg-muted)' : comp.score >= 75 ? 'var(--cg-red)' : comp.score >= 50 ? 'var(--cg-amber)' : 'var(--cg-green)'
+                }}>{comp.score == null ? 'Unavailable' : formatScore(comp.score)}</div>
                 <div className="breakdown-row__bar">
                   <div className="progress-bar">
                     <div
                       className={`progress-bar__fill ${comp.score >= 75 ? 'progress-bar__fill--red' : comp.score >= 50 ? 'progress-bar__fill--amber' : 'progress-bar__fill--green'}`}
-                      style={{ width: `${Math.min(comp.score, 100)}%` }}
+                      style={{ width: comp.score == null ? '0%' : `${Math.min(comp.score, 100)}%` }}
                     />
                   </div>
                 </div>
@@ -274,11 +559,12 @@ export function PullRequestDetail() {
           </div>
           <div className="dashboard-panel__body">
             {tests ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <div className="metric-block"><div className="metric-block__label">Total</div><div className="metric-block__value">{tests.total_tests ?? 0}</div></div>
-                <div className="metric-block metric-block--green"><div className="metric-block__label">Passed</div><div className="metric-block__value">{tests.passed_tests ?? 0}</div></div>
-                <div className="metric-block metric-block--red"><div className="metric-block__label">Failed</div><div className="metric-block__value">{tests.failed_tests ?? 0}</div></div>
-                <div className="metric-block"><div className="metric-block__label">Skipped</div><div className="metric-block__value">{tests.skipped_tests ?? 0}</div></div>
+              <div className="evidence-grid">
+                <div className="metric-block"><div className="metric-block__label">Total</div><div className="metric-block__value">{tests.total ?? 'N/A'}</div></div>
+                <div className="metric-block metric-block--green"><div className="metric-block__label">Passed</div><div className="metric-block__value text-emerald-600">{tests.passed ?? 'N/A'}</div></div>
+                <div className="metric-block metric-block--red"><div className="metric-block__label">Failed</div><div className="metric-block__value text-rose-600">{tests.failed ?? 'N/A'}</div></div>
+                <div className="metric-block"><div className="metric-block__label">Errors</div><div className="metric-block__value">{tests.errors ?? 'N/A'}</div></div>
+                <div className="metric-block"><div className="metric-block__label">Skipped</div><div className="metric-block__value">{tests.skipped ?? 'N/A'}</div></div>
               </div>
             ) : (
               <div style={{ textAlign: 'center', color: 'var(--cg-muted)', padding: '24px', fontSize: '13px' }}>
@@ -287,26 +573,48 @@ export function PullRequestDetail() {
             )}
           </div>
         </div>
+
         <div className="dashboard-panel">
           <div className="dashboard-panel__head">
             <div className="dashboard-panel__title">Coverage</div>
           </div>
           <div className="dashboard-panel__body">
             {coverage ? (
-              <>
-                <div className="metric-block metric-block--blue">
-                  <div className="metric-block__label">Overall Coverage</div>
-                  <div className="metric-block__value">
-                    {formatPercentage(coverage.overall_coverage)}
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-slate-500">Overall Line Coverage</div>
+                    <div className="text-2xl font-bold text-slate-800 font-mono mt-1">
+                      {formatPercentage(coverage.line_coverage)}
+                    </div>
+                  </div>
+                  <div className="w-24">
+                    <div className="progress-bar">
+                      <div
+                        className="progress-bar__fill progress-bar__fill--green"
+                        style={{ width: `${Math.min(coverage.line_coverage ?? 0, 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-                <div className="metric-block metric-block--indigo">
-                  <div className="metric-block__label">Changed-Code Coverage</div>
-                  <div className="metric-block__value">
-                    {formatPercentage(coverage.changed_coverage)}
+
+                <div className="p-4 rounded-xl bg-indigo-50/50 border border-indigo-100 flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-semibold text-indigo-700">Changed-Code Coverage</div>
+                    <div className="text-2xl font-bold text-indigo-900 font-mono mt-1">
+                      {formatPercentage(coverage.changed_line_coverage)}
+                    </div>
+                  </div>
+                  <div className="w-24">
+                    <div className="progress-bar">
+                      <div
+                        className="progress-bar__fill"
+                        style={{ width: `${Math.min(coverage.changed_line_coverage ?? 0, 100)}%` }}
+                      />
+                    </div>
                   </div>
                 </div>
-              </>
+              </div>
             ) : (
               <div style={{ textAlign: 'center', color: 'var(--cg-muted)', padding: '24px', fontSize: '13px' }}>
                 No coverage data available.
@@ -316,59 +624,11 @@ export function PullRequestDetail() {
         </div>
       </div>
 
-      {/* FINDINGS */}
-      <div className="dashboard-panel" style={{ marginBottom: '16px' }}>
-        <div className="dashboard-panel__head">
-          <div className="dashboard-panel__title">
-            <Bug size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-            Findings
-          </div>
-          <div className="dashboard-panel__meta">{findings?.length || 0} issues</div>
-        </div>
-        <div className="dashboard-panel__body">
-          {findings && findings.length > 0 ? (
-            <div className="table-wrapper" style={{ boxShadow: 'none', border: '1px solid #f1f5f9' }}>
-              <table className="cg-table">
-                <thead>
-                  <tr>
-                    <th>Severity</th>
-                    <th>Title</th>
-                    <th>Category</th>
-                    <th>File</th>
-                    <th>Line</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {findings.map((f: any, idx: number) => (
-                    <tr key={idx}>
-                      <td>
-                        <Badge variant={f.severity === 'CRITICAL' || f.severity === 'HIGH' ? 'danger' : f.severity === 'MEDIUM' ? 'warning' : 'default'}>
-                          {f.severity}
-                        </Badge>
-                      </td>
-                      <td className="cell-primary font-medium">{f.title}</td>
-                      <td><Badge variant="indigo">{f.category}</Badge></td>
-                      <td className="cell-muted" style={{ fontFamily: 'monospace', fontSize: '12px' }}>{f.file_path}</td>
-                      <td className="cell-muted">{f.line_number}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div style={{ textAlign: 'center', padding: '32px', color: 'var(--cg-muted)', fontSize: '13px' }}>
-              <ShieldCheck size={32} strokeWidth={1.2} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
-              <div>No issues found in this pull request.</div>
-            </div>
-          )}
-        </div>
-      </div>
-
       {/* REVIEWER RECOMMENDATIONS */}
       <div className="dashboard-panel">
         <div className="dashboard-panel__head">
-          <div className="dashboard-panel__title">
-            <Users size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+          <div className="dashboard-panel__title flex items-center gap-2">
+            <Users size={18} strokeWidth={2} className="text-indigo-600" />
             Suggested Reviewers
           </div>
         </div>
@@ -382,7 +642,7 @@ export function PullRequestDetail() {
                 <div className="reviewer-card__info">
                   <div className="reviewer-card__name">@{r.reviewer_username}</div>
                   <div className="reviewer-card__reasons">
-                    {r.reasons?.join(' · ') || 'No details'}
+                    {r.reasons?.join(' · ') || 'Recommended by expertise'}
                   </div>
                 </div>
                 <div className="reviewer-card__score">
