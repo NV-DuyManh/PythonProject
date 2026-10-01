@@ -52,7 +52,7 @@ export function TestingConfiguration({ repositoryId }: TestingConfigurationProps
   if (loading) return <div className="skeleton skeleton--panel" />;
 
   return (
-    <div className="dashboard-panel mt-6">
+    <div className="dashboard-panel">
       <div className="dashboard-panel__head">
         <div className="dashboard-panel__title">
           <Settings size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
@@ -61,58 +61,58 @@ export function TestingConfiguration({ repositoryId }: TestingConfigurationProps
       </div>
       <div className="dashboard-panel__body">
         {error && (
-          <div className="p-3 mb-4 rounded-md bg-red-900/50 text-red-200 text-sm border border-red-800">
+          <div className="alert alert--error mb-4" role="alert">
             {error}
           </div>
         )}
         {success && (
-          <div className="p-3 mb-4 rounded-md bg-green-900/50 text-green-200 text-sm border border-green-800">
+          <div className="alert alert--success mb-4" role="status">
             Configuration saved successfully.
           </div>
         )}
         
-        <form onSubmit={handleSave} className="space-y-4">
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+        <form onSubmit={handleSave} className="form-stack">
+          <div className="testing-toggles">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               <input 
                 type="checkbox" 
                 checked={config?.enabled || false}
                 onChange={e => setConfig({...config, enabled: e.target.checked})}
-                disabled={!canEdit}
-                className="rounded bg-gray-800 border-gray-700"
+                disabled={!canEdit || !config}
+                
               />
               Enable Testing
             </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               <input 
                 type="checkbox" 
                 checked={config?.coverage_enabled || false}
                 onChange={e => setConfig({...config, coverage_enabled: e.target.checked})}
-                disabled={!canEdit}
-                className="rounded bg-gray-800 border-gray-700"
+                disabled={!canEdit || !config}
+                
               />
               Enable Coverage Parsing
             </label>
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
               <input 
                 type="checkbox" 
                 checked={config?.network_enabled || false}
                 onChange={e => setConfig({...config, network_enabled: e.target.checked})}
-                disabled={!canEdit}
-                className="rounded bg-gray-800 border-gray-700"
+                disabled={!canEdit || !config}
+                
               />
               Allow Network Access
             </label>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="evidence-grid">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Executor Type</label>
-              <select 
+              <label htmlFor="executor-type" className="block text-sm font-medium text-muted mb-1">Executor Type</label>
+              <select id="executor-type" 
                 value={config?.executor_type?.toUpperCase() || 'DISABLED'}
                 onChange={e => setConfig({...config, executor_type: e.target.value})}
-                disabled={!canEdit}
-                className="w-full bg-[#1a1b1e] border border-gray-800 rounded-md p-2 text-gray-200 text-sm focus:border-indigo-500 focus:outline-none"
+                disabled={!canEdit || !config}
+                className="w-full"
               >
                 <option value="DISABLED">Disabled</option>
                 <option value="LOCAL_TRUSTED">Local Trusted (Warning: Unsafe)</option>
@@ -121,40 +121,40 @@ export function TestingConfiguration({ repositoryId }: TestingConfigurationProps
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Docker Image</label>
-              <input 
+              <label htmlFor="docker-image" className="block text-sm font-medium text-muted mb-1">Docker Image</label>
+              <input id="docker-image" 
                 type="text" 
                 value={config?.docker_image || ''}
                 onChange={e => setConfig({...config, docker_image: e.target.value})}
-                disabled={!canEdit}
+                disabled={!canEdit || !config}
                 placeholder="e.g. python:3.12-slim"
-                className="w-full bg-[#1a1b1e] border border-gray-800 rounded-md p-2 text-gray-200 text-sm focus:border-indigo-500 focus:outline-none"
+                className="w-full"
               />
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          <div className="evidence-grid">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Install Command</label>
-              <input 
+              <label htmlFor="install-command" className="block text-sm font-medium text-muted mb-1">Install Command</label>
+              <input id="install-command" 
                 type="text" 
                 value={config?.install_command || ''}
                 onChange={e => setConfig({...config, install_command: e.target.value})}
-                disabled={!canEdit}
+                disabled={!canEdit || !config}
                 placeholder="e.g. pip install -r requirements.txt"
-                className="w-full bg-[#1a1b1e] border border-gray-800 rounded-md p-2 text-gray-200 text-sm focus:border-indigo-500 focus:outline-none"
+                className="w-full"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Test Command</label>
-              <input 
+              <label htmlFor="test-command" className="block text-sm font-medium text-muted mb-1">Test Command</label>
+              <input id="test-command" 
                 type="text" 
                 value={config?.test_command || ''}
                 onChange={e => setConfig({...config, test_command: e.target.value})}
-                disabled={!canEdit}
+                disabled={!canEdit || !config}
                 placeholder="e.g. pytest"
-                className="w-full bg-[#1a1b1e] border border-gray-800 rounded-md p-2 text-gray-200 text-sm focus:border-indigo-500 focus:outline-none"
+                className="w-full"
               />
             </div>
           </div>
@@ -163,8 +163,8 @@ export function TestingConfiguration({ repositoryId }: TestingConfigurationProps
             <div className="pt-2">
               <button 
                 type="submit" 
-                disabled={saving}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+                disabled={saving || !config}
+                className="btn-primary"
               >
                 <Save size={16} />
                 {saving ? 'Saving...' : 'Save Configuration'}

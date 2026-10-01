@@ -1,6 +1,6 @@
-
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import { Login } from './pages/Login';
 import { Onboarding } from './pages/Onboarding';
 import { AppLayout } from './layouts/AppLayout';
@@ -14,12 +14,13 @@ import { Integrations } from './pages/Integrations';
 import { GitHubIntegration } from './pages/GitHubIntegration';
 import { WorkspaceMembers } from './pages/WorkspaceMembers';
 import { AcceptInvite } from './pages/AcceptInvite';
+import { Skeleton } from './components/ui/Skeleton';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { authenticated, loading, workspaces } = useAuth();
   const location = useLocation();
 
-  if (loading) return null;
+  if (loading) return <div className="content"><Skeleton className="h-16 w-full" /></div>;
 
   if (!authenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -34,27 +35,29 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/onboarding" element={<Onboarding />} />
-          <Route path="/invite/:token" element={<AcceptInvite />} />
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
-            <Route path="/dashboard" element={<Overview />} />
-            <Route path="/repositories" element={<Repositories />} />
-            <Route path="/repositories/:repositoryId" element={<RepositoryDetail />} />
-            <Route path="/pull-requests" element={<PullRequests />} />
-            <Route path="/pull-requests/:pullRequestId" element={<PullRequestDetail />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/integrations" element={<Integrations />} />
-            <Route path="/integrations/github" element={<GitHubIntegration />} />
-            <Route path="/settings/members" element={<WorkspaceMembers />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/onboarding" element={<Onboarding />} />
+            <Route path="/invite/:token" element={<AcceptInvite />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route path="/dashboard" element={<Overview />} />
+              <Route path="/repositories" element={<Repositories />} />
+              <Route path="/repositories/:repositoryId" element={<RepositoryDetail />} />
+              <Route path="/pull-requests" element={<PullRequests />} />
+              <Route path="/pull-requests/:pullRequestId" element={<PullRequestDetail />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/integrations" element={<Integrations />} />
+              <Route path="/integrations/github" element={<GitHubIntegration />} />
+              <Route path="/settings/members" element={<WorkspaceMembers />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

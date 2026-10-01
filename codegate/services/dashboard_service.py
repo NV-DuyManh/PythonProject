@@ -427,11 +427,16 @@ class DashboardService:
         f_list = [
             {
                 "id": f.id,
-                "severity": getattr(f.severity, 'value', f.severity),
+                "source": getattr(f.source, 'value', f.source) if f.source else "analyzer",
+                "severity": getattr(f.severity, 'value', f.severity) if f.severity else "MEDIUM",
                 "title": f.title,
-                "category": f.category,
-                "file_path": f.file_path,
-                "line_number": f.start_line
+                "description": f.description or "",
+                "recommendation": f.recommendation or "",
+                "category": f.category or "OTHER",
+                "rule_id": f.rule_id or "",
+                "file_path": f.file_path or "",
+                "line_number": f.start_line,
+                "end_line": f.end_line,
             } for f in findings_query
         ]
         

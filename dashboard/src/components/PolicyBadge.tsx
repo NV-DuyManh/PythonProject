@@ -2,6 +2,9 @@ import { Badge } from './ui/Badge';
 import { ShieldCheck, ShieldAlert, ShieldX } from 'lucide-react';
 
 export function PolicyBadge({ decision }: { decision: string }) {
+  if (!['PASS', 'WARNING', 'BLOCK'].includes(decision)) {
+    return <Badge>{decision || 'Not evaluated'}</Badge>;
+  }
   if (decision === 'PASS') {
     return (
       <Badge variant="success" className="gap-1 px-2 py-0.5 font-mono">

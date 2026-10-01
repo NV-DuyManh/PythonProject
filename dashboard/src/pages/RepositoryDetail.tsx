@@ -17,7 +17,10 @@ import {
   FileCheck,
   CheckCircle,
   AlertTriangle,
+  ArrowLeft,
+  FolderGit2,
 } from 'lucide-react';
+import { DistributionChart } from '../charts/DashboardCharts';
 import { TestingConfiguration } from '../components/TestingConfiguration';
 
 export function RepositoryDetail() {
@@ -41,7 +44,7 @@ export function RepositoryDetail() {
 
   if (loading) {
     return (
-      <div>
+      <div className="page-stack animate-pulse">
         <div className="skeleton skeleton--hero" />
         <div className="dashboard-grid dashboard-grid--stats">
           {[...Array(4)].map((_, i) => <div key={i} className="skeleton skeleton--stat" />)}
@@ -66,23 +69,36 @@ export function RepositoryDetail() {
   const { repository, health, policy_summary, testing_summary, coverage_summary, finding_summary, recent_prs } = data;
 
   return (
-    <div>
+    <div className="page-stack">
+      {/* Breadcrumb Navigation */}
+      <div className="flex items-center gap-2 text-xs font-semibold text-[var(--cg-muted)]">
+        <Link to="/repositories" className="hover:text-[var(--cg-primary)] flex items-center gap-1">
+          <ArrowLeft size={14} /> Repositories
+        </Link>
+        <span>/</span>
+        <span className="text-[var(--cg-text)] font-bold">Details</span>
+      </div>
+
       {/* HERO */}
       <div className="page-hero">
         <div className="page-hero__content">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <p className="page-hero__kicker">REPOSITORY</p>
+          <div className="flex items-center gap-2 mb-2">
             <Badge variant={repository.active ? 'success' : 'default'}>
-              {repository.active ? 'Active' : 'Inactive'}
+              {repository.active ? 'Active Repository' : 'Inactive'}
             </Badge>
+            <span className="text-xs font-semibold text-[var(--cg-text-secondary)] bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)] px-2 py-0.5 rounded">
+              {repository.provider}
+            </span>
           </div>
-          <h2 className="page-hero__title">{repository.name}</h2>
+          <h1 className="page-hero__title flex items-center gap-2.5">
+            <FolderGit2 size={26} className="text-indigo-500" />
+            {repository.name}
+          </h1>
           <div className="page-hero__desc">
-            <Badge variant="indigo">{repository.provider}</Badge>
             {health?.last_analysis_at && (
-              <span style={{ marginLeft: '12px', fontSize: '13px', color: 'var(--cg-muted)' }}>
-                <Clock size={13} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
-                Last analysis: {formatDate(health.last_analysis_at)}
+              <span className="inline-flex items-center gap-1.5 text-xs text-[var(--cg-muted)]">
+                <Clock size={13} className="text-indigo-500" />
+                Last analyzed: {formatDate(health.last_analysis_at)}
               </span>
             )}
           </div>
@@ -92,46 +108,59 @@ export function RepositoryDetail() {
       {/* KPI CARDS */}
       <div className="dashboard-grid dashboard-grid--stats">
         <div className="stat-card stat-card--green">
-          <div className="stat-card__icon"><TrendingUp size={26} strokeWidth={1.8} /></div>
+          <div className="stat-card__icon"><TrendingUp size={24} strokeWidth={2} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Avg Quality</div>
             <div className="stat-card__value">{formatScore(health?.average_quality)}</div>
+            <div className="stat-card__note">Out of 100</div>
           </div>
         </div>
+
         <div className="stat-card stat-card--amber">
-          <div className="stat-card__icon"><ShieldAlert size={26} strokeWidth={1.8} /></div>
+          <div className="stat-card__icon"><ShieldAlert size={24} strokeWidth={2} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Avg Risk</div>
             <div className="stat-card__value">{formatScore(health?.average_risk)}</div>
+            <div className="stat-card__note">Risk index</div>
           </div>
         </div>
+
         <div className="stat-card stat-card--red">
-          <div className="stat-card__icon"><AlertTriangle size={26} strokeWidth={1.8} /></div>
+          <div className="stat-card__icon"><AlertTriangle size={24} strokeWidth={2} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Block Rate</div>
             <div className="stat-card__value">{formatPercentage(policy_summary?.block_rate)}</div>
+            <div className="stat-card__note">Policy blocks</div>
           </div>
         </div>
+
         <div className="stat-card stat-card--blue">
-          <div className="stat-card__icon"><FileCheck size={26} strokeWidth={1.8} /></div>
+          <div className="stat-card__icon"><FileCheck size={24} strokeWidth={2} /></div>
           <div className="stat-card__body">
             <div className="stat-card__label">Changed Coverage</div>
             <div className="stat-card__value">{formatPercentage(coverage_summary?.average_changed_coverage)}</div>
+            <div className="stat-card__note">PR code tested</div>
           </div>
         </div>
+      </div>
+
+      <div className="dashboard-grid dashboard-grid--charts">
+        <DistributionChart title="Quality grades" values={data.quality_distribution || {}} />
+        <DistributionChart title="Risk levels" values={data.risk_distribution || {}} colors={{ LOW: 'var(--cg-green)', MEDIUM: 'var(--cg-amber)', HIGH: 'var(--cg-red)', CRITICAL: 'var(--cg-red)' }} />
+        <DistributionChart title="Policy decisions" values={data.policy_distribution || {}} colors={{ PASS: 'var(--cg-green)', WARNING: 'var(--cg-amber)', BLOCK: 'var(--cg-red)' }} />
       </div>
 
       {/* HEALTH OVERVIEW */}
       <div className="dashboard-grid dashboard-grid--bottom">
         <div className="dashboard-panel">
           <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">
-              <Activity size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+            <div className="dashboard-panel__title flex items-center gap-2">
+              <Activity size={18} strokeWidth={2} className="text-indigo-600" />
               Engineering Health
             </div>
           </div>
           <div className="dashboard-panel__body">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+            <div className="evidence-grid">
               <div className="metric-block">
                 <div className="metric-block__label">Open PRs</div>
                 <div className="metric-block__value">{health?.open_pr_count ?? 0}</div>
@@ -142,7 +171,7 @@ export function RepositoryDetail() {
               </div>
               <div className="metric-block metric-block--green">
                 <div className="metric-block__label">Completed</div>
-                <div className="metric-block__value">{health?.analyses_completed ?? 0}</div>
+                <div className="metric-block__value text-emerald-600">{health?.analyses_completed ?? 'N/A'}</div>
               </div>
             </div>
           </div>
@@ -150,24 +179,24 @@ export function RepositoryDetail() {
 
         <div className="dashboard-panel">
           <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">
-              <ShieldCheck size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+            <div className="dashboard-panel__title flex items-center gap-2">
+              <ShieldCheck size={18} strokeWidth={2} className="text-emerald-600" />
               Policy Summary
             </div>
           </div>
           <div className="dashboard-panel__body">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+            <div className="evidence-grid">
               <div className="metric-block metric-block--green">
                 <div className="metric-block__label">Pass</div>
-                <div className="metric-block__value">{policy_summary?.pass_count ?? 0}</div>
+                <div className="metric-block__value text-emerald-600">{policy_summary?.pass_count ?? 0}</div>
               </div>
               <div className="metric-block metric-block--amber">
                 <div className="metric-block__label">Warning</div>
-                <div className="metric-block__value">{policy_summary?.warning_count ?? 0}</div>
+                <div className="metric-block__value text-amber-600">{policy_summary?.warning_count ?? 0}</div>
               </div>
               <div className="metric-block metric-block--red">
                 <div className="metric-block__label">Block</div>
-                <div className="metric-block__value">{policy_summary?.block_count ?? 0}</div>
+                <div className="metric-block__value text-rose-600">{policy_summary?.block_count ?? 0}</div>
               </div>
             </div>
           </div>
@@ -178,35 +207,35 @@ export function RepositoryDetail() {
       <div className="dashboard-grid dashboard-grid--bottom">
         <div className="dashboard-panel">
           <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">
-              <CheckCircle size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+            <div className="dashboard-panel__title flex items-center gap-2">
+              <CheckCircle size={18} strokeWidth={2} className="text-indigo-600" />
               Testing
             </div>
           </div>
           <div className="dashboard-panel__body">
             <div className="metric-block">
               <div className="metric-block__label">Test Pass Rate</div>
-              <div className="metric-block__value">{formatPercentage(testing_summary?.test_pass_rate)}</div>
+              <div className="metric-block__value text-emerald-600">{formatPercentage(testing_summary?.test_pass_rate)}</div>
             </div>
           </div>
         </div>
 
         <div className="dashboard-panel">
           <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">
-              <Bug size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+            <div className="dashboard-panel__title flex items-center gap-2">
+              <Bug size={18} strokeWidth={2} className="text-rose-600" />
               Findings
             </div>
           </div>
           <div className="dashboard-panel__body">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div className="evidence-grid">
               <div className="metric-block metric-block--red">
                 <div className="metric-block__label">Critical</div>
-                <div className="metric-block__value">{finding_summary?.critical ?? 0}</div>
+                <div className="metric-block__value text-rose-600">{finding_summary?.critical ?? 0}</div>
               </div>
               <div className="metric-block metric-block--amber">
                 <div className="metric-block__label">High</div>
-                <div className="metric-block__value">{finding_summary?.high ?? 0}</div>
+                <div className="metric-block__value text-amber-600">{finding_summary?.high ?? 0}</div>
               </div>
             </div>
           </div>
@@ -218,15 +247,15 @@ export function RepositoryDetail() {
       {/* RECENT PULL REQUESTS */}
       <div className="dashboard-panel">
         <div className="dashboard-panel__head">
-          <div className="dashboard-panel__title">
-            <GitBranch size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
+          <div className="dashboard-panel__title flex items-center gap-2">
+            <GitBranch size={18} strokeWidth={2} className="text-indigo-600" />
             Recent Pull Requests
           </div>
           <div className="dashboard-panel__meta">{recent_prs?.length ?? 0} PRs</div>
         </div>
         <div className="dashboard-panel__body">
           {recent_prs && recent_prs.length > 0 ? (
-            <div className="table-wrapper" style={{ boxShadow: 'none', border: '1px solid #f1f5f9' }}>
+            <div className="table-wrapper" style={{ boxShadow: 'none', border: '1px solid var(--cg-border)' }}>
               <table className="cg-table">
                 <thead>
                   <tr>
@@ -243,7 +272,7 @@ export function RepositoryDetail() {
                 <tbody>
                   {recent_prs.map((pr: any) => (
                     <tr key={pr.pull_request_id}>
-                      <td>
+                      <td className="font-bold text-indigo-600">
                         <Link to={`/pull-requests/${pr.pull_request_id}`} className="cell-link">
                           #{pr.number}
                         </Link>
@@ -259,8 +288,8 @@ export function RepositoryDetail() {
                           {pr.state}
                         </Badge>
                       </td>
-                      <td>{formatScore(pr.quality_score)}</td>
-                      <td>{formatScore(pr.risk_score)}</td>
+                      <td className="font-bold">{formatScore(pr.quality_score)}</td>
+                      <td className="font-bold">{formatScore(pr.risk_score)}</td>
                       <td>
                         {pr.policy_decision ? (
                           <Badge variant={pr.policy_decision === 'PASS' ? 'success' : pr.policy_decision === 'WARNING' ? 'warning' : pr.policy_decision === 'BLOCK' ? 'danger' : 'default'}>
@@ -277,6 +306,7 @@ export function RepositoryDetail() {
           ) : (
             <EmptyState
               icon={GitBranch}
+              image="/mascot/mascot-empty.jpg"
               title="No pull requests"
               description="This repository has no pull requests yet. Create a pull request to see analysis data here."
             />

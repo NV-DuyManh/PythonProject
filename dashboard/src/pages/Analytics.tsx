@@ -1,265 +1,206 @@
 import { useEffect, useState } from 'react';
+import { RefreshCw, ChartNoAxesCombined } from 'lucide-react';
 import { CodeGateAPI } from '../api/client';
 import type { DashboardOverviewResponse } from '../types';
-import {
-  RefreshCw,
-  ShieldCheck,
-  ShieldX,
-  CheckCircle,
-  FileCheck,
-  Bug,
-  Users,
-} from 'lucide-react';
 import { ErrorState } from '../components/ui/ErrorState';
+import { EmptyState } from '../components/ui/EmptyState';
+import { Skeleton } from '../components/ui/Skeleton';
+import { PageHeader } from '../components/ui/PageHeader';
+import { TrendChart, DistributionChart, PolicyTrendChart, SingleMetricTrendChart } from '../charts/DashboardCharts';
 import { formatPercentage, formatScore } from '../lib/utils';
 import { useAuth } from '../contexts/AuthContext';
 
 export function Analytics() {
   const { workspaceVersion } = useAuth();
   const [data, setData] = useState<DashboardOverviewResponse | null>(null);
+  const [prs, setPrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const load = () => {
     setLoading(true);
     setError(null);
-    CodeGateAPI.getOverview()
-      .then(setData)
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+    Promise.all([
+      CodeGateAPI.getOverview(),
+      CodeGateAPI.getPullRequests().catch(() => [])
+    ]).then(([overviewData, prsData]) => {
+      setData(overviewData);
+      setPrs(prsData || []);
+    }).catch(err => setError(err.message)).finally(() => setLoading(false));
   };
 
   useEffect(() => { load(); }, [workspaceVersion]);
 
+  const header = (
+    <PageHeader
+      title="Analytics"
+      description="Historical code health, risk evolution, and policy performance across all repositories."
+      actions={
+        <button className="btn-secondary" onClick={load} disabled={loading}>
+          <RefreshCw size={16} className={loading ? 'spin' : ''} />Refresh
+        </button>
+      }
+    />
+  );
+
   if (loading) {
     return (
-      <div>
-        <div className="skeleton skeleton--hero" />
-        <div className="dashboard-grid dashboard-grid--stats">
-          {[...Array(4)].map((_, i) => <div key={i} className="skeleton skeleton--stat" />)}
-        </div>
-        <div className="dashboard-grid dashboard-grid--bottom">
-          <div className="skeleton skeleton--panel" />
-          <div className="skeleton skeleton--panel" />
-        </div>
+      <div className="page-stack animate-pulse">
+        {header}
+        <Skeleton className="h-28 w-full rounded-2xl" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-8">
-        <ErrorState onRetry={load} description={error} title="Unable to load analytics" />
+      <div className="page-stack">
+        {header}
+        <ErrorState title="Unable to load analytics" description={error} onRetry={load} />
       </div>
     );
   }
 
-  const d = data!;
+  if (!data || data.analyses_total === 0) {
+    return (
+      <div className="page-stack">
+        {header}
+        <EmptyState
+          icon={ChartNoAxesCombined}
+          image="/mascot/mascot-empty.jpg"
+          title="No analytics yet"
+          description="Analyze a pull request to see recorded quality, risk and policy results."
+        />
+      </div>
+    );
+  }
+
+  const d = data;
 
   return (
-    <div>
-      {/* HERO */}
-      <div className="page-hero">
-        <div className="page-hero__content">
-          <p className="page-hero__kicker">INTELLIGENCE</p>
-          <h2 className="page-hero__title">Engineering Analytics</h2>
-          <p className="page-hero__desc">
-            Understand quality, risk and review trends over time.
-          </p>
-        </div>
-        <div className="page-hero__actions">
-          <button className="btn-primary" onClick={load}>
-            <RefreshCw size={15} strokeWidth={2} /> Refresh Data
-          </button>
-        </div>
-      </div>
+    <div className="page-stack">
+      {header}
 
-      {/* FILTER */}
-      <div className="filter-card">
-        <div className="filter-card__info">
-          <div className="filter-card__label">ANALYTICS FILTER</div>
-          <h3>All Time</h3>
-          <div className="filter-card__desc">Aggregated metrics across all repositories and pull requests.</div>
+      <dl className="metric-strip">
+        <div>
+          <dt className="flex items-center justify-between">
+            <span>Average quality</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">All Time</span>
+          </dt>
+          <dd className="text-indigo-600">{formatScore(d.average_quality_score)}</dd>
+          <small>{d.analyses_completed ?? 'N/A'} completed analyses</small>
         </div>
-        <div className="filter-card__controls">
-          <select defaultValue="all">
-            <option value="all">All Repositories</option>
-          </select>
-          <select defaultValue="all">
-            <option value="all">All Time</option>
-          </select>
-        </div>
-      </div>
 
-      {/* KPI */}
-      <div className="dashboard-grid dashboard-grid--stats">
-        <div className="stat-card stat-card--green">
-          <div className="stat-card__icon"><ShieldCheck size={28} strokeWidth={1.8} /></div>
-          <div className="stat-card__body">
-            <div className="stat-card__label">Avg Quality</div>
-            <div className="stat-card__value">{formatScore(d.average_quality_score)}</div>
-          </div>
+        <div>
+          <dt className="flex items-center justify-between">
+            <span>Average risk</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Safety</span>
+          </dt>
+          <dd className={(d.average_risk_score ?? 0) > 50 ? 'text-amber-600' : 'text-slate-800'}>
+            {formatScore(d.average_risk_score)}
+          </dd>
+          <small>Lower is better</small>
         </div>
-        <div className="stat-card stat-card--amber">
-          <div className="stat-card__icon"><ShieldX size={28} strokeWidth={1.8} /></div>
-          <div className="stat-card__body">
-            <div className="stat-card__label">Avg Risk</div>
-            <div className="stat-card__value">{formatScore(d.average_risk_score)}</div>
-          </div>
-        </div>
-        <div className="stat-card stat-card--indigo">
-          <div className="stat-card__icon"><CheckCircle size={28} strokeWidth={1.8} /></div>
-          <div className="stat-card__body">
-            <div className="stat-card__label">Pass Rate</div>
-            <div className="stat-card__value">{formatPercentage(d.policy_pass_rate)}</div>
-          </div>
-        </div>
-        <div className="stat-card stat-card--blue">
-          <div className="stat-card__icon"><FileCheck size={28} strokeWidth={1.8} /></div>
-          <div className="stat-card__body">
-            <div className="stat-card__label">Changed Coverage</div>
-            <div className="stat-card__value">{formatPercentage(d.average_changed_line_coverage)}</div>
-          </div>
-        </div>
-      </div>
 
-      {/* QUALITY SECTION */}
-      <div className="dashboard-grid dashboard-grid--analytics">
-        <div className="dashboard-panel">
-          <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">Quality Overview</div>
-          </div>
-          <div className="dashboard-panel__body">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div className="metric-block metric-block--green">
-                <div className="metric-block__label">Avg Score</div>
-                <div className="metric-block__value">{formatScore(d.average_quality_score)}</div>
-              </div>
-              <div className="metric-block metric-block--indigo">
-                <div className="metric-block__label">Total Analyses</div>
-                <div className="metric-block__value">{d.analyses_completed ?? 0}</div>
-              </div>
-            </div>
-          </div>
+        <div>
+          <dt className="flex items-center justify-between">
+            <span>Policy pass rate</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">Compliance</span>
+          </dt>
+          <dd className="text-emerald-600">{formatPercentage(d.policy_pass_rate)}</dd>
+          <small>{d.policy_pass_count} passed evaluations</small>
         </div>
-        <div className="dashboard-panel">
-          <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">Risk Overview</div>
-          </div>
-          <div className="dashboard-panel__body">
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div className="metric-block metric-block--amber">
-                <div className="metric-block__label">Avg Risk</div>
-                <div className="metric-block__value">{formatScore(d.average_risk_score)}</div>
-              </div>
-              <div className="metric-block metric-block--red">
-                <div className="metric-block__label">Block Rate</div>
-                <div className="metric-block__value">{formatPercentage(d.policy_block_rate)}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* POLICY */}
+        <div>
+          <dt className="flex items-center justify-between">
+            <span>Changed coverage</span>
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">Verification</span>
+          </dt>
+          <dd className="text-blue-600">{formatPercentage(d.average_changed_line_coverage)}</dd>
+          <small>Recorded coverage evidence</small>
+        </div>
+      </dl>
+
       <div className="dashboard-grid dashboard-grid--charts">
-        <div className="dashboard-panel">
-          <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">Policy Distribution</div>
-          </div>
-          <div className="dashboard-panel__body">
-            <div className="metric-block metric-block--green">
-              <div className="metric-block__label">PASS</div>
-              <div className="metric-block__value">{d.policy_pass_count ?? 0}</div>
-            </div>
-            <div className="metric-block metric-block--amber">
-              <div className="metric-block__label">WARNING</div>
-              <div className="metric-block__value">{d.policy_warning_count ?? 0}</div>
-            </div>
-            <div className="metric-block metric-block--red">
-              <div className="metric-block__label">BLOCK</div>
-              <div className="metric-block__value">{d.policy_block_count ?? 0}</div>
-            </div>
-          </div>
-        </div>
-        <div className="dashboard-panel">
-          <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">Testing</div>
-          </div>
-          <div className="dashboard-panel__body">
-            <div className="metric-block metric-block--green">
-              <div className="metric-block__label">Test Pass Rate</div>
-              <div className="metric-block__value">{formatPercentage(d.test_pass_rate)}</div>
-            </div>
-            <div className="metric-block metric-block--blue">
-              <div className="metric-block__label">Changed Coverage</div>
-              <div className="metric-block__value">{formatPercentage(d.average_changed_line_coverage)}</div>
-            </div>
-          </div>
-        </div>
-        <div className="dashboard-panel">
-          <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">Security</div>
-          </div>
-          <div className="dashboard-panel__body">
-            <div className="alert-card alert-card--red">
-              <div className="alert-card__icon alert-card__icon--red">
-                <Bug size={18} strokeWidth={1.8} />
-              </div>
-              <div className="alert-card__body">
-                <h4>Critical Findings</h4>
-              </div>
-              <div className="alert-card__value" style={{ color: 'var(--cg-red)' }}>{d.critical_findings ?? 0}</div>
-            </div>
-            <div className="alert-card alert-card--amber">
-              <div className="alert-card__icon alert-card__icon--amber">
-                <ShieldX size={18} strokeWidth={1.8} />
-              </div>
-              <div className="alert-card__body">
-                <h4>High Findings</h4>
-              </div>
-              <div className="alert-card__value" style={{ color: 'var(--cg-amber)' }}>{d.high_findings ?? 0}</div>
-            </div>
-          </div>
-        </div>
+        <SingleMetricTrendChart
+          title="Quality history"
+          metricName="Quality"
+          metricKey="quality"
+          metricColor="#6366f1"
+          gradientId="analyticsQualityGradient"
+          prs={prs || []}
+          trendPoints={d.quality_trend || []}
+        />
+        <SingleMetricTrendChart
+          title="Risk history"
+          metricName="Risk"
+          metricKey="risk"
+          metricColor="#f59e0b"
+          gradientId="analyticsRiskGradient"
+          prs={prs || []}
+          trendPoints={d.risk_trend || []}
+        />
       </div>
 
-      {/* BOTTOM */}
-      <div className="dashboard-grid dashboard-grid--bottom">
-        <div className="dashboard-panel">
-          <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">
-              <Users size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-              Reviewer Recommendations
-            </div>
-          </div>
-          <div className="dashboard-panel__body">
-            <div className="metric-block metric-block--indigo">
-              <div className="metric-block__label">Generated Recommendations</div>
-              <div className="metric-block__value">{d.reviewer_recommendations_generated ?? 0}</div>
-              <div className="metric-block__note">AI-powered reviewer matches</div>
-            </div>
-          </div>
-        </div>
-        <div className="dashboard-panel">
-          <div className="dashboard-panel__head">
-            <div className="dashboard-panel__title">
-              <ShieldX size={18} strokeWidth={1.8} style={{ marginRight: '8px', verticalAlign: 'middle' }} />
-              Risk Summary
-            </div>
-          </div>
-          <div className="dashboard-panel__body">
-            <div className="metric-block metric-block--red">
-              <div className="metric-block__label">Blocked PRs</div>
-              <div className="metric-block__value">{d.policy_block_count ?? 0}</div>
-            </div>
-            <div className="metric-block metric-block--green">
-              <div className="metric-block__label">Healthy PRs</div>
-              <div className="metric-block__value">{d.policy_pass_count ?? 0}</div>
-            </div>
-          </div>
-        </div>
+      <div className="dashboard-grid dashboard-grid--bottom mt-6">
+        <PolicyTrendChart data={d.policy_trend || []} />
+        <TrendChart title="Changed-code coverage" series={[{ name: 'Coverage %', color: 'var(--cg-primary)', points: d.changed_coverage_trend || [] }]} />
       </div>
+
+      <div className="dashboard-grid dashboard-grid--charts mt-6">
+        <DistributionChart title="Quality grades" values={d.quality_grade_distribution || {}} />
+        <DistributionChart title="Risk levels" values={d.risk_level_distribution || {}} colors={{ LOW: 'var(--cg-green)', MEDIUM: 'var(--cg-amber)', HIGH: 'var(--cg-red)', CRITICAL: 'var(--cg-red)' }} />
+      </div>
+
+      <section className="dashboard-panel">
+        <div className="section-heading">
+          <h2>Evidence summary</h2>
+        </div>
+        <div className="table-wrapper">
+          <table className="cg-table">
+            <thead>
+              <tr>
+                <th>Evidence</th>
+                <th>Recorded value</th>
+                <th>Context</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="font-semibold text-[var(--cg-text)]">Analyses</td>
+                <td className="font-bold text-[var(--cg-text)]">{d.analyses_completed} completed / {d.analyses_failed} failed</td>
+                <td className="text-[var(--cg-muted)]">{d.analyses_total} total</td>
+              </tr>
+              <tr>
+                <td className="font-semibold text-[var(--cg-text)]">Test pass rate</td>
+                <td className="font-bold text-emerald-600">{formatPercentage(d.test_pass_rate)}</td>
+                <td className="text-[var(--cg-muted)]">{d.tests_passed_runs} passed / {d.tests_failed_runs} failed runs{d.tests_passed_runs === 0 && d.tests_failed_runs === 0 ? ' (no results recorded)' : ''}</td>
+              </tr>
+              <tr>
+                <td className="font-semibold text-[var(--cg-text)]">Line coverage</td>
+                <td className="font-bold font-mono text-[var(--cg-text)]">{formatPercentage(d.average_line_coverage)}</td>
+                <td className="text-[var(--cg-muted)]">Average recorded coverage</td>
+              </tr>
+              <tr>
+                <td className="font-semibold text-[var(--cg-text)]">Policy block rate</td>
+                <td className="font-bold text-rose-600">{formatPercentage(d.policy_block_rate)}</td>
+                <td className="text-[var(--cg-muted)]">{d.policy_block_count} blocked evaluations</td>
+              </tr>
+              <tr>
+                <td className="font-semibold text-[var(--cg-text)]">Findings</td>
+                <td className="font-bold text-[var(--cg-text)]">{d.critical_findings} critical / {d.high_findings} high</td>
+                <td className="text-[var(--cg-muted)]">{d.high_security_findings ?? 'N/A'} high security findings</td>
+              </tr>
+              <tr>
+                <td className="font-semibold text-[var(--cg-text)]">Reviewer recommendations</td>
+                <td className="font-bold text-[var(--cg-text)]">{d.reviewer_recommendations_generated ?? 'N/A'}</td>
+                <td className="text-[var(--cg-muted)]">Generated recommendations</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }

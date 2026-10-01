@@ -73,6 +73,20 @@ export interface PRDashboardItem {
   updated_at: string;
 }
 
+export interface FindingDetail {
+  id: number;
+  source?: string;
+  severity: string;
+  title: string;
+  description?: string;
+  recommendation?: string;
+  category: string;
+  rule_id?: string;
+  file_path?: string;
+  line_number?: number | null;
+  end_line?: number | null;
+}
+
 export interface PullRequestDashboardDetail {
   pr: {
     id: number;
@@ -90,6 +104,6 @@ export interface PullRequestDashboardDetail {
   policy: any;
   tests: any;
   coverage: any;
-  findings: any;
+  findings: FindingDetail[];
   reviewer_recommendation: any;
 }

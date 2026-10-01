@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { GitBranch, Loader2 } from 'lucide-react';
+import { GitBranch, Shield, Sparkles, BookOpen } from 'lucide-react';
+import { AuthShell } from '../components/ui/AuthShell';
+import { Skeleton } from '../components/ui/Skeleton';
 
 export function Login() {
   const { authenticated, loading } = useAuth();
@@ -19,50 +21,49 @@ export function Login() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f4f7fb] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin" />
+      <div className="auth-page">
+        <Skeleton className="h-32 w-full max-w-md rounded-2xl" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center shadow-lg shadow-indigo-600/20">
-            <span className="text-white font-black text-2xl tracking-tight">CG</span>
-          </div>
-        </div>
-        <h2 className="mt-8 text-center text-3xl font-black text-slate-900 tracking-tight">
-          Welcome to CodeGate
-        </h2>
-        <p className="mt-2 text-center text-sm font-medium text-slate-500">
-          Local PR Quality & Intelligence Platform
-        </p>
-      </div>
+    <AuthShell
+      title="Welcome to CodeGate"
+      description="Sign in to your engineering workspace."
+      badgeText="Next-Gen Automated Code Review"
+    >
+      <div className="flex flex-col gap-4">
+        <button
+          onClick={handleLogin}
+          className="btn-primary w-full py-3 text-[15px] shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/35"
+        >
+          <GitBranch size={19} strokeWidth={2.2} />
+          Continue with GitHub
+        </button>
 
-      <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[440px]">
-        <div className="bg-white/80 backdrop-blur-xl py-10 px-4 shadow-[0_20px_55px_rgba(15,23,42,0.06)] sm:rounded-3xl sm:px-10 border border-slate-200/60">
-          <button
-            onClick={handleLogin}
-            className="w-full flex justify-center items-center py-3.5 px-4 rounded-xl shadow-sm text-[15px] font-bold text-white bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-4 focus:ring-slate-900/10 transition-all hover:-translate-y-0.5"
-          >
-            <GitBranch className="w-5 h-5 mr-2.5 opacity-90" />
-            Continue with GitHub
-          </button>
-          
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200" />
-              </div>
-              <div className="relative flex justify-center text-xs font-semibold uppercase tracking-wider">
-                <span className="px-3 bg-white text-slate-400">Secure Local OAuth</span>
-              </div>
-            </div>
+        <p className="text-center text-xs text-slate-500 font-medium">
+          Authentication is handled by GitHub.
+        </p>
+
+        <div className="border-t border-[var(--cg-border-soft)] pt-4 mt-2 grid grid-cols-3 gap-2 text-center">
+          <div className="p-2 rounded-xl bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)]">
+            <Sparkles size={16} className="mx-auto text-indigo-500 mb-1" />
+            <div className="text-[11px] font-bold text-[var(--cg-text)]">Smart PRs</div>
+            <div className="text-[10px] text-[var(--cg-muted)]">Automated AI scan</div>
+          </div>
+          <div className="p-2 rounded-xl bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)]">
+            <BookOpen size={16} className="mx-auto text-purple-500 mb-1" />
+            <div className="text-[11px] font-bold text-[var(--cg-text)]">Lessons</div>
+            <div className="text-[10px] text-[var(--cg-muted)]">Best practice tips</div>
+          </div>
+          <div className="p-2 rounded-xl bg-[var(--cg-surface-soft)] border border-[var(--cg-border-soft)]">
+            <Shield size={16} className="mx-auto text-emerald-500 mb-1" />
+            <div className="text-[11px] font-bold text-[var(--cg-text)]">Policy Gate</div>
+            <div className="text-[10px] text-[var(--cg-muted)]">Block bad commits</div>
           </div>
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }

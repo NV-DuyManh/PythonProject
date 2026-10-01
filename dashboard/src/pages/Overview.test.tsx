@@ -1,3 +1,4 @@
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { Overview } from './Overview';
@@ -8,6 +9,8 @@ vi.mock('../api/client', () => ({
   CodeGateAPI: {
     getOverview: vi.fn(),
     getSystemStatus: vi.fn(),
+    getPullRequests: vi.fn(),
+    getRepositories: vi.fn(),
   },
 }));
 
@@ -22,17 +25,19 @@ vi.mock('../contexts/AuthContext', () => ({
 describe('Overview Dashboard Page', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    vi.mocked(CodeGateAPI.getPullRequests).mockResolvedValue([]);
+    vi.mocked(CodeGateAPI.getRepositories).mockResolvedValue([]);
   });
 
   it('renders loading skeletons initially', () => {
     vi.mocked(CodeGateAPI.getOverview).mockReturnValue(new Promise(() => {}));
-    const { container } = render(<Overview />);
+    const { container } = render(<MemoryRouter><Overview /></MemoryRouter>);
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('renders error state on API failure', async () => {
     vi.mocked(CodeGateAPI.getOverview).mockRejectedValue(new Error('Network error'));
-    render(<Overview />);
+    render(<MemoryRouter><Overview /></MemoryRouter>);
     await waitFor(() => {
       expect(screen.getByText('Unable to load data')).toBeInTheDocument();
       expect(screen.getByText('Network error')).toBeInTheDocument();
@@ -64,7 +69,7 @@ describe('Overview Dashboard Page', () => {
       critical_findings: 0,
     } as unknown as DashboardOverviewResponse);
 
-    render(<Overview />);
+    render(<MemoryRouter><Overview /></MemoryRouter>);
     await waitFor(() => {
       expect(screen.getByText('No analysis data yet')).toBeInTheDocument();
       expect(screen.getByText('Connect a repository or analyze a Pull Request to populate the dashboard.')).toBeInTheDocument();
@@ -95,7 +100,7 @@ describe('Overview Dashboard Page', () => {
       critical_findings: 1,
     } as unknown as DashboardOverviewResponse);
 
-    render(<Overview />);
+    render(<MemoryRouter><Overview /></MemoryRouter>);
     await waitFor(() => {
       expect(screen.getAllByText('84.9').length).toBeGreaterThan(0);
       expect(screen.getAllByText('42.2').length).toBeGreaterThan(0);
